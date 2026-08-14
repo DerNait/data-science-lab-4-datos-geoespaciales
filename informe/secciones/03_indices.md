@@ -33,14 +33,14 @@ monitoreo de floraciones algales desde satélite) en lugar de inventar una
 fórmula propia. Este método necesita un tipo de imagen distinto al que se
 usa para vegetación y agua, por lo que se pide directamente al servicio de
 procesamiento de Copernicus en vez de calcularse a mano; ese servicio
-requiere una cuenta y un permiso de acceso independientes, que el equipo
-está tramitando. En cuanto ese acceso esté disponible, el mismo proceso ya
-construido calculará automáticamente la cianobacteria de las 22 fechas sin
-tener que rehacer nada de lo demás.
+requiere una cuenta y un permiso de acceso independientes. Ese acceso ya
+está configurado y el mismo proceso construido calculó automáticamente la
+cianobacteria de las 22 fechas sin tener que rehacer nada de lo demás.
 
-## Resultados obtenidos hasta ahora
+## Resultados obtenidos
 
-**Vegetación y agua (NDVI y NDWI): completos para las 22 fechas.**
+**Vegetación, agua y cianobacteria: completos para las 22 fechas (66 de 66
+combinaciones lago-fecha-índice).**
 
 En ambos lagos, el índice de agua (NDWI) dio valores positivos de forma
 consistente sobre las zonas analizadas, confirmando que la ubicación y el
@@ -50,10 +50,12 @@ mantuvo en general bajo o negativo en la mayoría de las fechas, sin mostrar
 un patrón evidente de vegetación densa o floraciones extendidas de forma
 sostenida a lo largo del período.
 
-**Cianobacteria: pendiente.** Los 22 valores todavía no están disponibles;
-el método y el procesamiento ya están listos y probados, solo falta que el
-equipo reciba el acceso al servicio de Copernicus mencionado arriba para
-obtener los números reales.
+El índice de cianobacteria muestra una diferencia clara entre los dos
+lagos: Amatitlán se mueve en valores notablemente más altos que Atitlán a
+lo largo de toda la serie, y sube de forma marcada en las últimas fechas
+disponibles (abril y junio de 2026). Atitlán se mantiene en valores mucho
+más bajos y estables durante todo el período. El detalle fecha por fecha y
+su interpretación ambiental están en la sección del ejercicio 4.
 
 ## Una advertencia importante sobre la calidad del dato
 
@@ -66,10 +68,28 @@ una señal casi nula que, al convertirla en índice, se vuelve inestable),
 no de una señal ambiental real. Estas tres fechas quedaron marcadas
 explícitamente como "revisar con cautela" en los datos, para que no se
 interpreten sus promedios de la misma forma que los de una fecha con datos
-limpios. Además, la fecha del 7 de febrero de 2026 en Amatitlán, ya
-identificada como de cobertura parcial en el enunciado del laboratorio, se
-mantiene marcada con esa misma advertencia en todos los productos
-derivados de ella.
+limpios.
+
+El índice de cianobacteria tiene su propio conjunto de fechas atípicas en
+Atitlán, más amplio que el de NDVI/NDWI: además de las tres fechas
+anteriores, también el 17 de julio de 2025, el 29 de diciembre de 2025 y el
+22 de julio de 2026 quedaron marcados "revisar con cautela" (más del 10 %
+de los píxeles fuera del rango de referencia del método, 0 a 500 µg/L,
+casi siempre por valores negativos del polinomio sobre agua muy clara). En
+total 6 de las 11 fechas de Atitlán llevan esta advertencia en
+cianobacteria; ninguna fecha de Amatitlán la tiene. Además, la fecha del 7
+de febrero de 2026 en Amatitlán, ya identificada como de cobertura parcial
+en el enunciado del laboratorio, se mantiene marcada con esa misma
+advertencia en los tres índices derivados de ella.
+
+Por último, la caja de consulta de Atitlán es más grande que la de
+Amatitlán y, a la resolución de 10 metros que usa este laboratorio, supera
+el límite de 2500 píxeles por lado que acepta de forma síncrona el
+servicio de Copernicus usado para cianobacteria. Para esas 11 escenas la
+imagen se pidió a una resolución ligeramente más gruesa (manteniendo la
+proporción del área) y luego se realineó a la misma rejilla de 10 metros
+que el resto de los productos, así que el archivo final entregado no
+cambia de resolución; solo cambió el insumo intermedio.
 
 ## Limitación pendiente
 

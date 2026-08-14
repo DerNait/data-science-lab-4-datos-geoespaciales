@@ -217,6 +217,9 @@ def load_scene_bands(scene: EscenaOficial, band_names: Sequence[str]) -> dict[st
 # Cianobacteria vía Sentinel Hub Process API (script numérico documentado)
 # --------------------------------------------------------------------------
 
+# Límite sincrono de la Process API para width/height en píxeles.
+SENTINEL_HUB_MAX_DIMENSION_PX = 2500
+
 
 # Pide un token OAuth (client credentials) para la Process API.
 def sentinel_hub_token() -> str:
@@ -288,6 +291,17 @@ def request_cyano_layer(scene: EscenaOficial, *, resolution_m: int = RESOLUCION_
     lago = LAGOS[scene.lago]
     width = max(1, round((lago.east - lago.west) * 111_320 / resolution_m))
     height = max(1, round((lago.north - lago.south) * 111_320 / resolution_m))
+    max_dim = max(width, height)
+    if max_dim > SENTINEL_HUB_MAX_DIMENSION_PX:
+        # La Process API sincrona rechaza width/height > 2500 px. Para lagos
+        # cuya caja a RESOLUCION_OBJETIVO_M lo supera (ej. Atitlan), se pide
+        # a una resolucion mas gruesa manteniendo la relacion de aspecto; el
+        # raster resultante se realinea igual a la rejilla de referencia en
+        # align_to_reference, asi que el archivo exportado sigue quedando a
+        # RESOLUCION_OBJETIVO_M.
+        scale = SENTINEL_HUB_MAX_DIMENSION_PX / max_dim
+        width = max(1, round(width * scale))
+        height = max(1, round(height * scale))
 
     out_dir = _raw_scene_dir(scene)
     out_path = out_dir / "cyano_ndci_l1c.tif"

@@ -212,6 +212,20 @@ bandas L2A). Si el raster de cianobacteria llega con una rejilla distinta,
 se realinea con remuestreo bilineal (`rasterio.warp.reproject`) antes de
 comparar o correlacionar los tres productos.
 
+### Límite de tamaño de la Process API (bbox de Atitlán)
+
+La Process API de Sentinel Hub rechaza peticiones síncronas con
+`width`/`height` mayores a 2500 px (`SENTINEL_HUB_MAX_DIMENSION_PX` en
+`src/indices.py`). La caja de Atitlán a `RESOLUCION_OBJETIVO_M = 10` m
+produce 2836×1739 px, por encima de ese límite (Amatitlán, más pequeña,
+queda justo por debajo con 1393×906 px). `request_cyano_layer` detecta
+cuando la dimensión mayor excede el límite y reduce `width`/`height`
+proporcionalmente (mismo aspect ratio) antes de pedir el raster. Esto solo
+afecta la resolución del insumo crudo de cianobacteria de Atitlán: el
+`align_to_reference` posterior lo remuestrea igual a la rejilla común de
+10 m, así que el GeoTIFF exportado en `data/processed/indices/` no cambia
+de resolución.
+
 ### Variables de `data/processed/manifest_indices.csv`
 
 Contrato de entrega del ejercicio 3 hacia el ejercicio 4. Una fila por lago, fecha
