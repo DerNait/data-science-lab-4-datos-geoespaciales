@@ -32,7 +32,7 @@ temporal de cianobacteria por lago y fecha.
   Sentinel Hub / Copernicus Data Space sobre Sentinel-2 **L1C** (el producto
   para el que está calibrada su fórmula), no se reproduce localmente sobre
   L2A.
-- NDVI y NDWI se calculan localmente con las bandas L2A de Persona A
+- NDVI y NDWI se calculan localmente con las bandas L2A ya descargadas
   (`B04`/`B08` y `B03`/`B08`), enmascarados con la clase agua de `SCL`
   mientras no exista el GeoJSON oficial del contorno del lago.
 - Los tres índices de una fecha se exportan alineados a la misma rejilla, en
@@ -211,18 +211,27 @@ sobrescribe un archivo existente.
 
 ### 3. Calcular los tres índices de una escena de prueba
 
-Requiere que Persona A ya haya descargado B03, B04, B08 y SCL de esa fecha:
+Requiere tener ya descargadas las bandas B03, B04, B08 y SCL de esa fecha.
+NDVI y NDWI **no dependen de credenciales de Sentinel Hub**: se calculan y
+exportan siempre que existan esas bandas. Si el raster crudo de
+cianobacteria no está disponible y no se pasa `--fetch-cyano-remote`, esa
+escena simplemente se omite para cianobacteria (su fila queda
+`pendiente_calculo`) sin bloquear NDVI/NDWI:
 
 ```powershell
 python src/indices.py compute --lago amatitlan --fecha 2025-01-28 --fetch-cyano-remote
 ```
 
 Exporta `data/processed/indices/amatitlan/2025-01-28/{ndvi,ndwi,cianobacteria}.tif`
-y actualiza las tres filas correspondientes de `manifest_indices.csv`.
+(cianobacteria solo si hay credenciales o raster crudo disponible) y
+actualiza las filas correspondientes de `manifest_indices.csv`.
 
 ### 4. Calcular el lote de 22 escenas
 
-Solo después de revisar la escena de prueba:
+Solo después de revisar la escena de prueba. Se puede correr sin
+`--fetch-cyano-remote` para dejar listos los 44 GeoTIFF de NDVI/NDWI de una
+vez mientras se consiguen las credenciales de Sentinel Hub, y repetirlo
+después con `--fetch-cyano-remote` para completar cianobacteria:
 
 ```powershell
 python src/indices.py compute --confirm-batch --fetch-cyano-remote
