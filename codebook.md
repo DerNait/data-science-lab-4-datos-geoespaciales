@@ -77,3 +77,129 @@ sin alterar en `data/raw/geojson/` con nombres distintos.
 - Todo GeoTIFF descargado debe declarar CRS y tener dimensiones positivas.
 - La escena parcial de Amatitlán `2026-02-07` conserva siempre su advertencia.
 
+## Ejercicio 3 (Persona B) - índices NDVI, NDWI y cianobacteria
+
+### Script de cianobacteria elegido
+
+El catálogo https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel-2/
+tiene varios scripts relacionados con agua/algas para Sentinel-2: NDCI L1C,
+Se2WaQ (calidad de agua general), Maximum Peak Height Bloom Index y APA
+Script (plantas acuáticas). Se revisaron los cuatro antes de elegir uno,
+como exige la planificación del avance.
+
+| Campo | Valor |
+|---|---|
+| Nombre | CyanoLakes Chlorophyll-a L1C (NDCI) |
+| Autores | Jeremy Kravitz & Mark Matthews (2020) |
+| Catálogo | https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel-2/cyanobacteria_chla_ndci_l1c/ |
+| Código fuente | https://github.com/sentinel-hub/custom-scripts/blob/master/sentinel-2/cyanobacteria_chla_ndci_l1c/script.js |
+| Fecha de consulta | 2026-08-13 |
+| Producto Sentinel compatible | Sentinel-2 **L1C** (reflectancia TOA) |
+| Bandas usadas | B02, B03, B04, B05, B07, B08, B8A, B11, B12 |
+| NDCI | `NDCI = (B05 - B04) / (B05 + B04)` |
+| Clorofila-a (proxy de cianobacteria) | `chl = 826.57*NDCI^3 - 176.43*NDCI^2 + 19*NDCI + 4.071` |
+| Unidad | µg/L (ajuste sobre dataset simulado; no es una medición de laboratorio) |
+| Rango de referencia | 0 a 500 µg/L |
+| Máscara de agua propia del script | agua si `MNDWI>0.42` o `NDWI>0.4` o `AWEInsh>0.1879` o `AWEIsh>0.1112` o `NDVI<-0.2` o `NDWI_leaves>1`; se anula si `AWEInsh<=-0.03` o `DBSI>0` (filtro de zonas urbanas/suelo desnudo) |
+
+Se eligió este script porque es el único de los cuatro candidatos nombrado
+explícitamente para cianobacteria (no para calidad de agua en general) y
+porque su fórmula y umbrales son públicos, no una caja negra.
+
+`src/evalscripts/cyano_ndci_l1c_original.js` es una copia textual, sin
+modificar, del script del catálogo (evidencia auditable). Su salida nativa
+es una imagen RGB de visualización, no un raster numérico, por lo que **no
+se usa para pedir datos**: el laboratorio exige explícitamente un raster
+numérico apto para estadísticas.
+
+`src/evalscripts/cyano_ndci_l1c_numeric.js` es la adaptación usada en la
+práctica: mismas fórmulas, mismos umbrales, mismas 9 bandas de entrada;
+solo cambia la salida, de un color a un valor `FLOAT32` (`chl`) con una
+banda `dataMask` que marca válido únicamente lo que el propio script
+clasifica como agua. No se agregó, quitó ni simplificó ningún término de la
+fórmula original.
+
+### Decisión: L1C vía Sentinel Hub, no reproducción local sobre L2A
+
+El polinomio de clorofila-a fue calibrado sobre reflectancia **L1C** (tope
+de atmósfera), no sobre L2A (reflectancia de superficie, ya corregida
+atmosféricamente) que descarga Persona A para NDVI/NDWI. Reproducir la
+fórmula localmente sobre L2A daría valores distintos a los que el script
+fue diseñado a producir. Por eso, siguiendo el enunciado ("descargue el
+resultado del script de Sentinel Hub cuando sea posible"), el índice de
+cianobacteria se pide directamente a la Process API de Sentinel Hub /
+Copernicus Data Space sobre Sentinel-2 L1C, y el resultado (ya calculado)
+se guarda como raster crudo:
+
+| Elemento | Valor |
+|---|---|
+| Token OAuth2 (client credentials) | `https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token` |
+| Process API | `https://sh.dataspace.copernicus.eu/api/v1/process` |
+| Tipo de colección | `S2L1C` |
+| Credenciales | OAuth client de Copernicus Data Space (Dashboard > User Settings > OAuth clients), variables `SENTINEL_HUB_CLIENT_ID` / `SENTINEL_HUB_CLIENT_SECRET` en `.env`, nunca versionadas |
+
+El raster crudo se guarda sin modificar en
+`data/raw/rasters/<lago>/<fecha>/cyano_ndci_l1c.tif` (mismo criterio de "no
+sobrescribir" que usa Persona A para las bandas L2A).
+
+### Fórmulas de NDVI y NDWI
+
+- `NDVI = (B08 - B04) / (B08 + B04)`
+- `NDWI = (B03 - B08) / (B03 + B08)`
+
+Ambas se calculan localmente sobre las bandas L2A que descarga Persona A.
+Donde el denominador es 0 el resultado se guarda como `nodata` (no como
+error ni como 0), evitando divisiones inválidas.
+
+### Máscara espacial mientras no exista el GeoJSON oficial del lago
+
+Los GeoJSON actuales (`data/raw/geojson/aoi_*_bbox.geojson`) son cajas de
+consulta, no el contorno del agua (ver sección "GeoJSON de consulta" más
+arriba). Mientras ese contorno oficial no esté disponible, NDVI y NDWI se
+enmascaran con la clase **agua (valor 6)** de la banda `SCL` de Sentinel-2
+L2A, excluyendo además nubes, sombras, nieve, píxeles saturados y `nodata`
+(clases SCL 0, 1, 2, 3, 8, 9, 10, 11). Es una máscara calculada por escena
+(cambia con las nubes de cada fecha), más precisa que un polígono fijo,
+pero puede incluir agua fuera del lago si hubiera otro cuerpo de agua
+dentro del bbox. Cuando el GeoJSON oficial esté disponible debe
+**intersectarse** con esta máscara, no reemplazarla.
+
+La máscara de cianobacteria es independiente: usa el water body index que
+trae el propio script (basado en L1C), no la SCL de L2A, porque son
+productos y fechas de reflectancia distintos.
+
+### Alineación espacial
+
+Los tres índices de una misma fecha se exportan sobre la misma rejilla
+(resolución objetivo `RESOLUCION_OBJETIVO_M = 10` m, CRS y transform de las
+bandas L2A). Si el raster de cianobacteria llega con una rejilla distinta,
+se realinea con remuestreo bilineal (`rasterio.warp.reproject`) antes de
+comparar o correlacionar los tres productos.
+
+### Variables de `data/processed/manifest_indices.csv`
+
+Contrato de entrega de Persona B hacia Persona C. Una fila por lago, fecha
+e índice: 22 escenas x 3 índices = 66 filas.
+
+| Variable | Tipo | Descripción |
+|---|---|---|
+| `lago` | texto categórico | `atitlan` o `amatitlan` |
+| `fecha` | fecha ISO | Fecha oficial `YYYY-MM-DD` |
+| `indice` | texto categórico | `ndvi`, `ndwi` o `cianobacteria` |
+| `ruta_raster` | texto | Ruta relativa del GeoTIFF de una sola banda `float32` |
+| `metodo` | texto | Cómo se obtuvo (local L2A + máscara SCL, o Sentinel Hub Process API sobre L1C) |
+| `formula_version` | texto | Identificador de versión de fórmula (`ndvi-v1`, `ndwi-v1`, `cyano-ndci-l1c-v1-numeric`) |
+| `unidad` | texto | `adimensional` (NDVI/NDWI) o µg/L (cianobacteria) |
+| `dtype` | texto | Siempre `float32` |
+| `nodata` | texto | Siempre `nan` |
+| `crs` | texto | CRS del raster exportado |
+| `resolucion_m` | decimal | Resolución de la rejilla común |
+| `pixeles_validos` | entero | Píxeles no `nodata` del índice |
+| `pixeles_lago` | entero | Píxeles que pasan la máscara de agua/válido usada |
+| `cobertura_valida_pct` | decimal | `100 * pixeles_validos / pixeles_totales` |
+| `quality_flag` | categoría | `pendiente_calculo`, `calculado` o `cobertura_parcial_oficial` |
+
+`quality_flag = cobertura_parcial_oficial` se conserva para las tres filas
+de `amatitlan 2026-02-07`, heredando la advertencia de
+`manifest_escenas.csv`.
+

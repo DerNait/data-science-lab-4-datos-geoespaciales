@@ -1,0 +1,67 @@
+lago,fecha,indice,ruta_raster,metodo,formula_version,unidad,dtype,nodata,crs,resolucion_m,pixeles_validos,pixeles_lago,cobertura_valida_pct,quality_flag
+amatitlan,2025-01-28,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-01-28,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-01-28,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-04-15,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-04-15,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-04-15,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-04-28,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-04-28,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-04-28,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-11-24,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-11-24,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2025-11-24,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-01-08,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-01-08,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-01-08,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-02-02,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-02-02,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-02-02,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-02-07,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-02-07,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-02-07,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-03-29,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-03-29,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-03-29,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-04-13,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-04-13,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-04-13,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-04-28,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-04-28,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-04-28,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-06-19,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-06-19,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+amatitlan,2026-06-19,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2025-01-18,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-01-18,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-01-18,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2025-04-13,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-04-13,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-04-13,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2025-05-13,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-05-13,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-05-13,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2025-07-17,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-07-17,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-07-17,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2025-11-21,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-11-21,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-11-21,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2025-12-29,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-12-29,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2025-12-29,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2026-02-12,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-02-12,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-02-12,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2026-03-24,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-03-24,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-03-24,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2026-04-13,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-04-13,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-04-13,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2026-04-28,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-04-28,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-04-28,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo
+atitlan,2026-07-22,ndvi,,,ndvi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-07-22,ndwi,,,ndwi-v1,adimensional,float32,nan,,,,,,pendiente_calculo
+atitlan,2026-07-22,cianobacteria,,,cyano-ndci-l1c-v1-numeric,µg/L (proxy de clorofila-a; polinomio ajustado sobre dataset simulado),float32,nan,,,,,,pendiente_calculo

@@ -3,9 +3,10 @@
 **CC3084 · Data Science · Universidad del Valle de Guatemala · Semestre II, 2026**
 
 Análisis multitemporal de los lagos Atitlán y Amatitlán con imágenes
-Sentinel-2. Esta primera etapa implementa los ejercicios 1 y 2: conexión con
+Sentinel-2. Esta etapa implementa los ejercicios 1 a 3: conexión con
 Copernicus Data Space mediante openEO, definición reproducible de las 22
-escenas oficiales y descarga limitada a los AOI y bandas necesarias.
+escenas oficiales, descarga limitada a los AOI y bandas necesarias, y el
+cálculo de NDVI, NDWI y el índice de cianobacteria.
 
 ## Estado de los ejercicios 1 y 2
 
@@ -21,6 +22,23 @@ escenas oficiales y descarga limitada a los AOI y bandas necesarias.
 - La autenticación OIDC y las descargas deben ejecutarse con la cuenta personal
   de Copernicus; no se almacenan usuarios, contraseñas ni tokens.
 
+## Estado del ejercicio 3
+
+- Se identificó y documentó el script de cianobacteria del catálogo de
+  Sentinel Hub (`CyanoLakes Chlorophyll-a L1C (NDCI)`, ver `codebook.md`),
+  entre varios candidatos disponibles para Sentinel-2.
+- El índice de cianobacteria se pide ya calculado a la Process API de
+  Sentinel Hub / Copernicus Data Space sobre Sentinel-2 **L1C** (el producto
+  para el que está calibrada su fórmula), no se reproduce localmente sobre
+  L2A.
+- NDVI y NDWI se calculan localmente con las bandas L2A de Persona A
+  (`B04`/`B08` y `B03`/`B08`), enmascarados con la clase agua de `SCL`
+  mientras no exista el GeoJSON oficial del contorno del lago.
+- Los tres índices de una fecha se exportan alineados a la misma rejilla, en
+  GeoTIFF de una sola banda `float32`.
+- `data/processed/manifest_indices.csv` es el contrato de 66 filas (22
+  escenas x 3 índices) que Persona C debe usar para el ejercicio 4.
+
 ## Estructura
 
 ```text
@@ -28,16 +46,20 @@ escenas oficiales y descarga limitada a los AOI y bandas necesarias.
 ├── data/
 │   ├── raw/
 │   │   ├── geojson/                 # AOI bbox de consulta en EPSG:4326
-│   │   ├── rasters/                 # assets originales de openEO, ignorados por Git
+│   │   ├── rasters/                 # assets originales de openEO y cianobacteria, ignorados por Git
 │   │   └── manifest_escenas.csv     # las 22 escenas oficiales
 │   └── processed/
-│       ├── indices/
-│       └── tablas/
+│       ├── indices/                 # GeoTIFF de NDVI, NDWI y cianobacteria
+│       ├── tablas/
+│       └── manifest_indices.csv     # contrato de 66 filas hacia Persona C
 ├── notebooks/
-│   └── 01_02_conexion_y_descarga.ipynb
+│   ├── 01_02_conexion_y_descarga.ipynb
+│   └── 03_indices.ipynb
 ├── src/
-│   ├── config.py                    # coordenadas, fechas y configuración común
+│   ├── config.py                    # coordenadas, fechas, script de cianobacteria y config común
 │   ├── adquisicion.py               # preparación, consulta y descarga openEO
+│   ├── indices.py                   # NDVI, NDWI, cianobacteria y manifest_indices.csv
+│   ├── evalscripts/                 # script de cianobacteria (original y adaptación numérica)
 │   ├── raster_utils.py              # validación local de GeoTIFF
 │   └── run_pipeline.py              # preparación segura de esta etapa
 ├── tests/
@@ -138,18 +160,70 @@ También se puede procesar un lago completo:
 python src/adquisicion.py download --lago atitlan --confirm-batch
 ```
 
-## Uso del notebook
+## Flujo reproducible del ejercicio 3
+
+No es necesario guardar credenciales de Sentinel Hub si solo se calculan
+NDVI/NDWI localmente. Para pedir el índice de cianobacteria a la Process API
+se necesita un OAuth client de Copernicus Data Space (Dashboard > User
+Settings > OAuth clients) y sus valores en `.env` como
+`SENTINEL_HUB_CLIENT_ID` / `SENTINEL_HUB_CLIENT_SECRET`.
+
+### 1. Preparar y validar el manifiesto de índices
+
+```powershell
+python src/indices.py prepare
+python src/indices.py validate
+```
+
+Crea/valida `data/processed/manifest_indices.csv` con 66 filas en estado
+`pendiente_calculo`. No requiere raster descargados ni credenciales.
+
+### 2. Pedir el raster crudo de cianobacteria de una escena
+
+Requiere `SENTINEL_HUB_CLIENT_ID`/`SENTINEL_HUB_CLIENT_SECRET`:
+
+```powershell
+python src/indices.py fetch-cyano --lago amatitlan --fecha 2025-01-28
+```
+
+Guarda el resultado sin modificar en
+`data/raw/rasters/amatitlan/2025-01-28/cyano_ndci_l1c.tif` y nunca
+sobrescribe un archivo existente.
+
+### 3. Calcular los tres índices de una escena de prueba
+
+Requiere que Persona A ya haya descargado B03, B04, B08 y SCL de esa fecha:
+
+```powershell
+python src/indices.py compute --lago amatitlan --fecha 2025-01-28 --fetch-cyano-remote
+```
+
+Exporta `data/processed/indices/amatitlan/2025-01-28/{ndvi,ndwi,cianobacteria}.tif`
+y actualiza las tres filas correspondientes de `manifest_indices.csv`.
+
+### 4. Calcular el lote de 22 escenas
+
+Solo después de revisar la escena de prueba:
+
+```powershell
+python src/indices.py compute --confirm-batch --fetch-cyano-remote
+```
+
+## Uso de los notebooks
 
 Abrir Jupyter desde la raíz:
 
 ```powershell
 jupyter notebook notebooks/01_02_conexion_y_descarga.ipynb
+jupyter notebook notebooks/03_indices.ipynb
 ```
 
-El notebook se puede ejecutar sin conexión porque las celdas remotas vienen
-desactivadas. Para autenticar o descargar, se cambia únicamente la bandera
-indicada en la celda correspondiente. La descarga demostrativa siempre apunta
-a una sola escena.
+Ambos notebooks se pueden ejecutar de arriba a abajo sin conexión ni
+credenciales porque las celdas remotas vienen desactivadas por bandera
+(`EJECUTAR_...`). Para autenticar, descargar o calcular cianobacteria vía
+Sentinel Hub, se cambia únicamente la bandera indicada en la celda
+correspondiente. Las operaciones demostrativas siempre apuntan a una sola
+escena; el lote de 22 escenas se confirma aparte.
 
 ## Limitación geométrica actual
 
@@ -162,6 +236,13 @@ Estos AOI son válidos para limitar la consulta del ejercicio 2, pero **no deben
 usarse como si fueran el contorno del agua** en promedios o mapas espaciales.
 Cuando se incorporen los GeoJSON oficiales, deben conservarse como fuente
 cruda separada y usarse para enmascarar el lago en los ejercicios posteriores.
+
+Mientras tanto, el ejercicio 3 usa una máscara interina: la clase "agua"
+(valor 6) de la banda `SCL` de Sentinel-2 L2A, dentro del bbox de consulta,
+excluyendo nubes/sombras/nieve de cada fecha (ver `codebook.md`). Es una
+máscara calculada por escena, más ajustada que un rectángulo fijo, pero debe
+intersectarse con el GeoJSON oficial del lago en cuanto esté disponible, no
+reemplazarse por él sin más.
 
 ## Datos y Git
 
