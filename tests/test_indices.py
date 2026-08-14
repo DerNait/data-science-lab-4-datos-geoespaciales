@@ -20,6 +20,7 @@ from src.indices import (
     compute_ndvi,
     compute_ndwi,
     expected_manifest_indices_rows,
+    reflectance_valid_mask,
     scl_valid_mask,
     scl_water_mask,
     select_scenes,
@@ -27,7 +28,7 @@ from src.indices import (
 )
 
 
-def _write_raster(path: Path, array: np.ndarray, *, descriptions=None, dtype=None):
+def _write_raster(path: Path, array: np.ndarray, *, descriptions=None, dtype=None, nodata=None):
     import rasterio
     from rasterio.transform import from_origin
 
@@ -42,6 +43,7 @@ def _write_raster(path: Path, array: np.ndarray, *, descriptions=None, dtype=Non
         "width": width,
         "count": count,
         "dtype": dtype or array.dtype,
+        "nodata": nodata,
         "crs": "EPSG:4326",
         "transform": transform,
     }
@@ -86,6 +88,22 @@ class SclMaskTest(unittest.TestCase):
     def test_water_mask_is_only_class_six(self) -> None:
         scl = np.array([4, 5, 6, 7])
         np.testing.assert_array_equal(scl_water_mask(scl), [False, False, True, False])
+
+
+class ReflectanceValidMaskTest(unittest.TestCase):
+    def test_excludes_pixels_where_any_band_is_nodata_even_if_scl_says_water(self) -> None:
+        # Caso real: amatitlan/2025-01-28 tiene píxeles con SCL=6 (agua) pero
+        # B08=-32768 (nodata) que SCL por sí sola no detecta.
+        b03 = np.array([100, -32768, 200])
+        b04 = np.array([100, 100, 200])
+        b08 = np.array([100, 100, -32768])
+        result = reflectance_valid_mask(b03, b04, b08, nodata=-32768)
+        np.testing.assert_array_equal(result, [True, False, False])
+
+    def test_no_nodata_declared_means_all_valid(self) -> None:
+        b03 = np.array([1.0, 2.0])
+        result = reflectance_valid_mask(b03, nodata=None)
+        np.testing.assert_array_equal(result, [True, True])
 
 
 class ManifestIndicesTest(unittest.TestCase):
@@ -187,19 +205,22 @@ class ComputeIndicesForSceneTest(unittest.TestCase):
                 scene = select_scenes("amatitlan", "2025-01-28")[0]
                 scene_dir = raw_dir / scene.lago / scene.fecha
 
+                nodata = -32768.0
                 bands = np.stack(
                     [
                         np.array([[0.10, 0.12], [0.30, 0.30]], dtype=np.float32),  # B03
                         np.array([[0.05, 0.05], [0.20, 0.20]], dtype=np.float32),  # B04
-                        np.array([[0.02, 0.02], [0.35, 0.35]], dtype=np.float32),  # B08
+                        np.array([[0.02, 0.02], [nodata, 0.35]], dtype=np.float32),  # B08
                     ]
                 )
-                scl = np.array([[6, 9], [6, 6]], dtype=np.uint16)  # agua, nube, agua, agua
+                # agua, nube, agua-pero-B08-nodata (caso real de amatitlan/2025-01-28), agua
+                scl = np.array([[6, 9], [6, 6]], dtype=np.uint16)
                 _write_raster(
                     scene_dir / "l2a.tif",
                     np.concatenate([bands, scl[np.newaxis, ...].astype(np.float32)]),
                     descriptions=["B03", "B04", "B08", "SCL"],
                     dtype="float32",
+                    nodata=nodata,
                 )
                 _write_raster(
                     scene_dir / "cyano_ndci_l1c.tif",
@@ -218,10 +239,55 @@ class ComputeIndicesForSceneTest(unittest.TestCase):
                 )
                 self.assertEqual(ndvi_row["quality_flag"], "calculado")
                 self.assertNotEqual(ndvi_row["pixeles_validos"], "")
-                # El píxel con nube (SCL=9) debe quedar fuera de la cuenta de válidos.
-                self.assertEqual(int(ndvi_row["pixeles_validos"]), 3)
+                # Fuera de la cuenta de válidos: el píxel con nube (SCL=9) y el
+                # píxel con SCL=6 (agua) pero B08 en nodata (-32768).
+                self.assertEqual(int(ndvi_row["pixeles_validos"]), 2)
 
-    def test_missing_cyano_raster_without_remote_flag_raises(self) -> None:
+    def test_missing_cyano_raster_skips_cyano_but_still_computes_ndvi_ndwi(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            raw_dir = root / "data" / "raw" / "rasters"
+            processed_dir = root / "data" / "processed"
+            manifest_path = processed_dir / "manifest_indices.csv"
+
+            with mock.patch.object(indices, "RAIZ", root), \
+                 mock.patch.object(indices, "DIR_RASTERS", raw_dir), \
+                 mock.patch.object(indices, "DIR_PROCESSED", processed_dir), \
+                 mock.patch.object(indices, "DIR_INDICES", processed_dir / "indices"), \
+                 mock.patch.object(indices, "RUTA_MANIFEST_INDICES", manifest_path):
+                scene = select_scenes("amatitlan", "2025-01-28")[0]
+                scene_dir = raw_dir / scene.lago / scene.fecha
+                bands = np.stack(
+                    [
+                        np.full((2, 2), 0.1, dtype=np.float32),
+                        np.full((2, 2), 0.1, dtype=np.float32),
+                        np.full((2, 2), 0.1, dtype=np.float32),
+                        np.full((2, 2), 6.0, dtype=np.float32),
+                    ]
+                )
+                _write_raster(
+                    scene_dir / "l2a.tif",
+                    bands,
+                    descriptions=["B03", "B04", "B08", "SCL"],
+                    dtype="float32",
+                )
+
+                outputs = indices.compute_indices_for_scene(scene, fetch_cyano_remote=False)
+                self.assertEqual(set(outputs), {"ndvi", "ndwi"})
+
+                rows = indices.read_manifest_indices()
+                cyano_row = next(
+                    r for r in rows
+                    if r["lago"] == "amatitlan" and r["fecha"] == "2025-01-28" and r["indice"] == "cianobacteria"
+                )
+                self.assertEqual(cyano_row["quality_flag"], "pendiente_calculo")
+                ndvi_row = next(
+                    r for r in rows
+                    if r["lago"] == "amatitlan" and r["fecha"] == "2025-01-28" and r["indice"] == "ndvi"
+                )
+                self.assertEqual(ndvi_row["quality_flag"], "calculado")
+
+    def test_missing_cyano_raster_with_require_cyano_still_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             raw_dir = root / "data" / "raw" / "rasters"
@@ -250,7 +316,9 @@ class ComputeIndicesForSceneTest(unittest.TestCase):
                     dtype="float32",
                 )
                 with self.assertRaises(InputDataError):
-                    indices.compute_indices_for_scene(scene, fetch_cyano_remote=False)
+                    indices.compute_indices_for_scene(
+                        scene, fetch_cyano_remote=False, require_cyano=True
+                    )
 
 
 class CyanoScriptFilesTest(unittest.TestCase):
