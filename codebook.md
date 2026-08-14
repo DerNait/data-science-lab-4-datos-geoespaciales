@@ -77,7 +77,7 @@ sin alterar en `data/raw/geojson/` con nombres distintos.
 - Todo GeoTIFF descargado debe declarar CRS y tener dimensiones positivas.
 - La escena parcial de Amatitlán `2026-02-07` conserva siempre su advertencia.
 
-## Ejercicio 3 (Persona B) - índices NDVI, NDWI y cianobacteria
+## Ejercicio 3 - índices NDVI, NDWI y cianobacteria
 
 ### Script de cianobacteria elegido
 
@@ -123,7 +123,7 @@ fórmula original.
 
 El polinomio de clorofila-a fue calibrado sobre reflectancia **L1C** (tope
 de atmósfera), no sobre L2A (reflectancia de superficie, ya corregida
-atmosféricamente) que descarga Persona A para NDVI/NDWI. Reproducir la
+atmosféricamente) usada para NDVI/NDWI. Reproducir la
 fórmula localmente sobre L2A daría valores distintos a los que el script
 fue diseñado a producir. Por eso, siguiendo el enunciado ("descargue el
 resultado del script de Sentinel Hub cuando sea posible"), el índice de
@@ -140,16 +140,52 @@ se guarda como raster crudo:
 
 El raster crudo se guarda sin modificar en
 `data/raw/rasters/<lago>/<fecha>/cyano_ndci_l1c.tif` (mismo criterio de "no
-sobrescribir" que usa Persona A para las bandas L2A).
+sobrescribir" usado para las bandas L2A).
 
 ### Fórmulas de NDVI y NDWI
 
 - `NDVI = (B08 - B04) / (B08 + B04)`
 - `NDWI = (B03 - B08) / (B03 + B08)`
 
-Ambas se calculan localmente sobre las bandas L2A que descarga Persona A.
+Ambas se calculan localmente sobre las bandas L2A ya descargadas.
 Donde el denominador es 0 el resultado se guarda como `nodata` (no como
 error ni como 0), evitando divisiones inválidas.
+
+Además de la clase SCL, se excluye cualquier píxel donde B03, B04 u B08
+tenga exactamente el valor `nodata` del raster (-32768 en las descargas de
+openEO). Se detectó en la primera escena real (`amatitlan/2025-01-28`) que
+SCL puede marcar un píxel como agua (clase 6) aunque una banda de
+reflectancia esté en `nodata`; ocurre en 12 de las 22 escenas descargadas,
+en magnitudes pequeñas (1 a 367 píxeles por escena). Sin este filtro
+adicional esos píxeles producirían valores de NDVI/NDWI sin sentido.
+
+**Valores fuera de \[-1, 1\] y columna `frac_valores_atipicos`:** NDVI y NDWI
+están matemáticamente acotados a [-1, 1]. Sobre agua profunda, B04 y/o B08
+pueden tener reflectancia muy cercana a cero (a veces negativa) por ruido de
+la corrección atmosférica de Sentinel-2 L2A; eso vuelve inestable el
+cociente y produce valores fuera de ese rango. No es un error de cálculo:
+la fórmula se aplicó tal cual sobre las bandas descargadas, sin recortar ni
+excluir esos píxeles, porque el enunciado no pide una fórmula distinta.
+
+En vez de reportar solo un promedio general, `manifest_indices.csv` guarda
+por fila la fracción de píxeles fuera de rango (`frac_valores_atipicos`).
+En las 22 escenas reales esa fracción es casi siempre baja (0-8 %), pero
+**tres fechas de Atitlán se apartan claramente del resto** y superan el
+umbral `UMBRAL_FRACCION_VALORES_ATIPICOS = 0.10` definido en `config.py`:
+
+| Fecha | NDVI fuera de rango | NDWI fuera de rango |
+|---|---:|---:|
+| `2025-01-18` | 27.9 % | 30.7 % |
+| `2025-11-21` | 15.4 % | 16.3 % |
+| `2026-02-12` | 13.4 % | 20.3 % |
+
+Esas tres filas quedan con `quality_flag = revisar_valores_atipicos` (en
+vez de `calculado`) para que el análisis temporal (ejercicio 4) y el
+informe no traten su promedio como igual de confiable que el resto; por
+ejemplo, `2025-01-18` tiene una mediana de NDVI de 0.55 (parecería
+vegetación densa), claramente un artefacto de las bandas y no una lectura
+real sobre agua. Debe interpretarse como limitación de los datos de esas
+fechas puntuales, no como hallazgo ambiental.
 
 ### Máscara espacial mientras no exista el GeoJSON oficial del lago
 
@@ -178,7 +214,7 @@ comparar o correlacionar los tres productos.
 
 ### Variables de `data/processed/manifest_indices.csv`
 
-Contrato de entrega de Persona B hacia Persona C. Una fila por lago, fecha
+Contrato de entrega del ejercicio 3 hacia el ejercicio 4. Una fila por lago, fecha
 e índice: 22 escenas x 3 índices = 66 filas.
 
 | Variable | Tipo | Descripción |
@@ -197,7 +233,13 @@ e índice: 22 escenas x 3 índices = 66 filas.
 | `pixeles_validos` | entero | Píxeles no `nodata` del índice |
 | `pixeles_lago` | entero | Píxeles que pasan la máscara de agua/válido usada |
 | `cobertura_valida_pct` | decimal | `100 * pixeles_validos / pixeles_totales` |
-| `quality_flag` | categoría | `pendiente_calculo`, `calculado` o `cobertura_parcial_oficial` |
+| `frac_valores_atipicos` | decimal (0-1) | Fracción de píxeles fuera del rango teórico del índice ([-1,1] en NDVI/NDWI, [0,500] en cianobacteria). Vacío para cianobacteria mientras no se calcule |
+| `quality_flag` | categoría | `pendiente_calculo`, `calculado`, `cobertura_parcial_oficial` o `revisar_valores_atipicos` |
+
+`quality_flag = revisar_valores_atipicos` se asigna cuando
+`frac_valores_atipicos` supera `UMBRAL_FRACCION_VALORES_ATIPICOS` (0.10);
+ver la sección de fórmulas de NDVI/NDWI para las tres fechas de Atitlán
+afectadas y su interpretación.
 
 `quality_flag = cobertura_parcial_oficial` se conserva para las tres filas
 de `amatitlan 2026-02-07`, heredando la advertencia de
