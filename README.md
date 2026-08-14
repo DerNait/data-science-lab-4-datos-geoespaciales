@@ -42,19 +42,22 @@ temporal de cianobacteria por lago y fecha.
 
 ## Estado del ejercicio 4
 
-- `src/analisis_temporal.py` valida `manifest_indices.csv` y reporta
-  cuántas de las 22 escenas de cianobacteria ya están listas antes de
-  calcular nada; ninguna fila pendiente se completa manualmente.
-- Con las escenas que sí tienen raster calculado, construye
+- Las 22 escenas oficiales de cianobacteria están calculadas
+  (`manifest_indices.csv` sin ninguna fila en `pendiente_calculo`).
+- `src/analisis_temporal.py` valida ese manifiesto y construye
   `data/processed/tablas/resumen_temporal.csv` (promedio, mediana,
-  desviación estándar, píxeles válidos y cobertura por lago y fecha).
+  desviación estándar, píxeles válidos y cobertura por lago y fecha) leyendo
+  únicamente los raster ya exportados; ninguna fila se completa a mano.
 - `notebooks/04_analisis_temporal.ipynb` grafica la serie por lago, marca
-  picos con un criterio explícito (media + 1 desviación estándar de la
-  propia serie) y distingue la fecha de cobertura parcial de Amatitlán del
+  picos con un criterio explícito (media + 1 desviación estándar de las
+  fechas de cobertura completa de la propia serie), compara ambos lagos en
+  un mismo eje y distingue la fecha de cobertura parcial de Amatitlán del
   resto de la serie.
-- Como el ejercicio 3 todavía no ha calculado cianobacteria para ninguna
-  escena, el resumen temporal y las gráficas están vacíos por ahora; el
-  cuaderno lo reporta explícitamente en lugar de fallar.
+- Amatitlán muestra un aumento marcado en las dos últimas fechas
+  (28-abr-2026 y 19-jun-2026, marcadas como pico); Atitlán se mantiene en un
+  rango mucho más bajo durante toda la serie. La interpretación completa,
+  con lo observado, una posible explicación ambiental y las limitaciones
+  por separado, está en la sección 8 del cuaderno.
 
 ## Estructura
 
