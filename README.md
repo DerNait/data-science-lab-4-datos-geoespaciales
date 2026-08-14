@@ -59,31 +59,69 @@ temporal de cianobacteria por lago y fecha.
   con lo observado, una posible explicación ambiental y las limitaciones
   por separado, está en la sección 8 del cuaderno.
 
+## Estado del ejercicio 5
+
+- El contorno real de ambos lagos ya se obtuvo de OpenStreetMap (Overpass
+  API) y quedó cacheado en `data/raw/geojson/lago_<lago>_boundary.geojson`
+  (Atitlán ≈ 124.70 km², Amatitlán ≈ 15.02 km², ver `codebook.md`).
+- `src/analisis_espacial.py` intersecta esa geometría real con la máscara
+  SCL-agua que ya produjo el ejercicio 3, sobre los raster ya exportados
+  (no reprocesa bandas crudas).
+- `notebooks/05_analisis_espacial.ipynb` genera los 22 mapas individuales
+  de cianobacteria, un panel comparativo por lago y uno entre lagos (misma
+  escala de color fija), un mapa interactivo por lago (Folium) y una
+  comparación norte/sur de concentración; todo queda en `results/maps/` y
+  `results/tables/metadata_mapas.csv`.
+
+## Estado del ejercicio 8.1 y 8.2
+
+- El umbral de "valor alto" de cianobacteria (10 µg/L, "Alert Level 1" de
+  la OMS) está fijado en `src/config.py`
+  (`UMBRAL_CIANOBACTERIA_ALTO_UGL`), documentado en `codebook.md`.
+- `notebooks/08_1_extension_floracion.ipynb` calcula, para las 22 escenas,
+  qué porcentaje del área válida del lago supera ese umbral y lo grafica
+  en el tiempo (`results/tables/extension_floracion.csv`,
+  `results/figures/<lago>_extension_floracion.png`).
+- `notebooks/08_2_zonas_persistentes.ipynb` calcula, por píxel, la
+  proporción de fechas válidas por encima del umbral (denominador variable
+  por píxel) y exporta los raster de persistencia en
+  `data/processed/analisis_espacial/<lago>/persistencia/`.
+
 ## Estructura
 
 ```text
 .
 ├── data/
 │   ├── raw/
-│   │   ├── geojson/                 # AOI bbox de consulta en EPSG:4326
+│   │   ├── geojson/                 # AOI bbox + contorno real (OSM) de cada lago, EPSG:4326
 │   │   ├── rasters/                 # assets originales de openEO y cianobacteria, ignorados por Git
 │   │   └── manifest_escenas.csv     # las 22 escenas oficiales
 │   └── processed/
 │       ├── indices/                 # GeoTIFF de NDVI, NDWI y cianobacteria
+│       ├── analisis_espacial/       # GeoTIFF de persistencia (proporción alta, conteo de fechas)
 │       ├── tablas/                  # resumen_temporal.csv
 │       └── manifest_indices.csv     # contrato de 66 filas hacia el ejercicio 4
 ├── notebooks/
 │   ├── 01_02_conexion_y_descarga.ipynb
 │   ├── 03_indices.ipynb
-│   └── 04_analisis_temporal.ipynb
+│   ├── 04_analisis_temporal.ipynb
+│   ├── 05_analisis_espacial.ipynb
+│   ├── 08_1_extension_floracion.ipynb
+│   └── 08_2_zonas_persistentes.ipynb
+├── results/
+│   ├── maps/                        # mapas individuales, comparativos, de persistencia e interactivos
+│   ├── figures/                     # series temporales (extensión de floración)
+│   └── tables/                      # extension_floracion.csv, metadata_mapas.csv
 ├── src/
 │   ├── config.py                    # coordenadas, fechas, script de cianobacteria y config común
 │   ├── adquisicion.py               # preparación, consulta y descarga openEO
 │   ├── indices.py                   # NDVI, NDWI, cianobacteria y manifest_indices.csv
 │   ├── analisis_temporal.py         # resumen_temporal.csv, picos y validación del manifiesto de índices
+│   ├── analisis_espacial.py         # contorno real, mapas, extensión de floración y persistencia
 │   ├── evalscripts/                 # script de cianobacteria (original y adaptación numérica)
 │   ├── raster_utils.py              # validación local de GeoTIFF
 │   └── run_pipeline.py              # preparación segura de esta etapa
+├── informe/secciones/
 ├── tests/
 ├── codebook.md
 ├── requirements.txt
@@ -275,6 +313,65 @@ cianobacteria ya calculadas (promedio, mediana, desviación estándar,
 píxeles válidos y cobertura por lago y fecha). Si todavía no hay ninguna
 escena calculada, no escribe nada y lo indica explícitamente.
 
+## Flujo reproducible del ejercicio 5, 8.1 y 8.2
+
+No requiere credenciales de Sentinel Hub: solo lee `manifest_indices.csv`
+y los GeoTIFF de cianobacteria ya exportados. Pedir el contorno real del
+lago sí requiere conexión a Overpass (una sola vez por lago; el resultado
+se cachea).
+
+### 1. Pedir el contorno real de un lago (una sola vez)
+
+```powershell
+python src/analisis_espacial.py fetch-boundary --lago atitlan
+python src/analisis_espacial.py fetch-boundary --lago amatitlan
+```
+
+Guarda el contorno real (OpenStreetMap) en
+`data/raw/geojson/lago_<lago>_boundary.geojson` y nunca sobrescribe uno
+existente. Si Overpass no responde o no encuentra el lago, falla con un
+error explícito en vez de usar el bbox como sustituto.
+
+### 2. Verificar consistencia de rejilla entre fechas
+
+```powershell
+python src/analisis_espacial.py check-grid
+```
+
+### 3. Extensión de valores altos (ejercicio 8.1)
+
+```powershell
+python src/analisis_espacial.py extension
+```
+
+Escribe `results/tables/extension_floracion.csv` con el porcentaje de área
+válida por encima de `UMBRAL_CIANOBACTERIA_ALTO_UGL` para cada una de las
+22 escenas.
+
+### 4. Zonas persistentes (ejercicio 8.2)
+
+```powershell
+python src/analisis_espacial.py persistence --lago atitlan
+python src/analisis_espacial.py persistence --lago amatitlan
+```
+
+Exporta los GeoTIFF de persistencia en
+`data/processed/analisis_espacial/<lago>/persistencia/`.
+
+### 5. Mapas y notebooks
+
+```powershell
+jupyter notebook notebooks/05_analisis_espacial.ipynb
+jupyter notebook notebooks/08_1_extension_floracion.ipynb
+jupyter notebook notebooks/08_2_zonas_persistentes.ipynb
+```
+
+El cuaderno 05 genera los 22 mapas individuales, los paneles comparativos,
+el mapa interactivo (Folium) y `results/tables/metadata_mapas.csv`. Los
+cuadernos 8.1 y 8.2 leen directamente los productos ya calculados por el
+ejercicio 3 y por el propio ejercicio 5 (contorno real cacheado); no
+descargan ni recalculan índices.
+
 ## Uso de los notebooks
 
 Abrir Jupyter desde la raíz:
@@ -283,43 +380,57 @@ Abrir Jupyter desde la raíz:
 jupyter notebook notebooks/01_02_conexion_y_descarga.ipynb
 jupyter notebook notebooks/03_indices.ipynb
 jupyter notebook notebooks/04_analisis_temporal.ipynb
+jupyter notebook notebooks/05_analisis_espacial.ipynb
+jupyter notebook notebooks/08_1_extension_floracion.ipynb
+jupyter notebook notebooks/08_2_zonas_persistentes.ipynb
 ```
 
-Los tres notebooks se pueden ejecutar de arriba a abajo sin conexión ni
-credenciales. Los dos primeros desactivan sus celdas remotas por bandera
-(`EJECUTAR_...`); para autenticar, descargar o calcular cianobacteria vía
-Sentinel Hub, se cambia únicamente la bandera indicada en la celda
-correspondiente. Las operaciones demostrativas siempre apuntan a una sola
-escena; el lote de 22 escenas se confirma aparte. El cuaderno 04 no tiene
-banderas remotas: valida el manifiesto de índices y grafica lo que ya esté
-calculado; si todavía no hay ninguna escena lista, lo reporta en vez de
-fallar.
+Los notebooks se pueden ejecutar de arriba a abajo sin conexión ni
+credenciales, salvo la sección de contorno real del ejercicio 5
+(`EJECUTAR_DESCARGA_CONTORNO`, en `False` por defecto porque el contorno
+ya está cacheado). Los dos primeros notebooks desactivan sus celdas
+remotas por bandera (`EJECUTAR_...`); para autenticar, descargar o
+calcular cianobacteria vía Sentinel Hub, se cambia únicamente la bandera
+indicada en la celda correspondiente. Las operaciones demostrativas
+siempre apuntan a una sola escena; el lote de 22 escenas se confirma
+aparte. El cuaderno 04 no tiene banderas remotas: valida el manifiesto de
+índices y grafica lo que ya esté calculado; si todavía no hay ninguna
+escena lista, lo reporta en vez de fallar. Los cuadernos 8.1 y 8.2 tampoco
+requieren red: leen directamente los productos ya calculados.
 
-## Limitación geométrica actual
+## Geometría real de los lagos
 
-El repositorio no contenía los GeoJSON originales de los lagos al implementar
-esta etapa. Por eso `data/raw/geojson/` contiene polígonos rectangulares
-construidos con las coordenadas oficiales. Sus propiedades declaran
-`geometry_role=query_bbox` e `is_lake_boundary=false`.
+El contorno real de cada lago (no solo su caja de consulta) se obtuvo de
+OpenStreetMap vía Overpass API y está cacheado, sin sobrescribir el bbox
+original, en:
 
-Estos AOI son válidos para limitar la consulta del ejercicio 2, pero **no deben
-usarse como si fueran el contorno del agua** en promedios o mapas espaciales.
-Cuando se incorporen los GeoJSON oficiales, deben conservarse como fuente
-cruda separada y usarse para enmascarar el lago en los ejercicios posteriores.
+- `data/raw/geojson/aoi_<lago>_bbox.geojson` — caja rectangular de consulta
+  (`geometry_role=query_bbox`, `is_lake_boundary=false`), usada para
+  limitar la descarga del ejercicio 2. **No representa el contorno del
+  agua.**
+- `data/raw/geojson/lago_<lago>_boundary.geojson` — contorno real del
+  lago (`geometry_role=lake_boundary`, `is_lake_boundary=true`), obtenido
+  de OpenStreetMap (licencia ODbL, ver `codebook.md` para la consulta
+  exacta y la fecha).
 
-Mientras tanto, el ejercicio 3 usa una máscara interina: la clase "agua"
-(valor 6) de la banda `SCL` de Sentinel-2 L2A, dentro del bbox de consulta,
-excluyendo nubes/sombras/nieve de cada fecha (ver `codebook.md`). Es una
-máscara calculada por escena, más ajustada que un rectángulo fijo, pero debe
-intersectarse con el GeoJSON oficial del lago en cuanto esté disponible, no
-reemplazarse por él sin más.
+El ejercicio 3 sigue usando su máscara por escena: la clase "agua" (valor
+6) de la banda `SCL` de Sentinel-2 L2A, excluyendo nubes/sombras/nieve de
+cada fecha (ver `codebook.md`). Esa máscara **no se reemplazó ni se
+reprocesó**: el ejercicio 5 (`src/analisis_espacial.py`,
+`combined_valid_mask`) la **intersecta** con el contorno real sobre los
+raster ya exportados, de modo que un píxel cuenta como válido solo si pasa
+ambos filtros. Esta intersección es la que usan los mapas del ejercicio 5
+y los cálculos de extensión (8.1) y persistencia (8.2); el manifiesto de
+índices y los raster de NDVI/NDWI/cianobacteria del ejercicio 3 quedan sin
+cambios.
 
 ## Datos y Git
 
-Los AOI, manifiestos, código, notebooks y resúmenes pequeños se versionan. Los
-GeoTIFF originales y los índices derivados se regeneran y están ignorados por
-Git. Nunca se deben agregar `.env`, tokens, contraseñas, cachés o rutas
-absolutas de una computadora.
+Los AOI, el contorno real de los lagos, manifiestos, código, notebooks y
+resúmenes/tablas pequeñas se versionan. Los GeoTIFF originales, los
+índices derivados y los raster de persistencia se regeneran y están
+ignorados por Git. Nunca se deben agregar `.env`, tokens, contraseñas,
+cachés o rutas absolutas de una computadora.
 
 ## Referencias técnicas
 

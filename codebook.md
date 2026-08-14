@@ -299,3 +299,193 @@ Es un umbral descriptivo y repetible, no un modelo de series de tiempo:
 cada lago tiene 11 observaciones irregulares, insuficientes para afirmar
 estacionalidad o tendencias estadísticamente robustas.
 
+## Ejercicio 5 - análisis espacial
+
+`src/analisis_espacial.py` lee únicamente los raster ya exportados por el
+ejercicio 3 (`data/processed/manifest_indices.csv`); no reabre bandas
+crudas ni cambia la máscara SCL-agua que produjo esos raster. La
+geometría real del lago se aplica aquí, sobre los productos ya calculados,
+como una intersección adicional.
+
+### Contorno real del lago (OpenStreetMap)
+
+| Campo | Valor |
+|---|---|
+| Fuente | OpenStreetMap, vía Overpass API |
+| Endpoint | `https://overpass-api.de/api/interpreter` |
+| Consulta (Overpass QL) | `[out:json][timeout:90]; nwr["natural"="water"]["name"="Lago de Atitlán"]; out geom;` (análoga para Amatitlán; se prueban variantes en español e inglés del nombre) |
+| Licencia | Open Database License (ODbL) 1.0 - © OpenStreetMap contributors |
+| Fecha de consulta | 2026-08-14 |
+| Área obtenida | Atitlán ≈ 124.70 km² (bbox de consulta: 474.23 km², razón 0.263); Amatitlán ≈ 15.02 km² (bbox: 121.71 km², razón 0.123) |
+
+El contorno se pide una sola vez por lago (`request_lake_boundary`) y se
+cachea sin sobrescribir en `data/raw/geojson/lago_<lago>_boundary.geojson`,
+con el mismo patrón "pedir una vez y cachear" que ya usa
+`indices.request_cyano_layer` para el raster crudo de cianobacteria (ver
+ejercicio 3). El bbox de consulta original (`aoi_<lago>_bbox.geojson`) no
+se modifica ni se sobrescribe. Cualquier fallo de red o "no encontrado" se
+relanza como `OverpassError` explícito: nunca se cae en silencio de
+vuelta al bbox de consulta como sustituto.
+
+### Máscara combinada (geometría real ∩ máscara SCL-agua)
+
+`combined_valid_mask(array, lago, profile)` calcula
+`isfinite(array) & lake_geometry_mask(lago, profile)` directamente sobre
+el raster ya exportado, en vez de reabrir las bandas `SCL` crudas. Esto es
+posible porque el raster de cada índice solo tiene valores numéricos donde
+ya pasó la máscara SCL-agua de esa escena (ver ejercicio 3); intersectar
+la geometría real sobre ese mismo array logra "geometría real ∩ máscara ya
+usada" sin duplicar ni modificar el pipeline de `indices.py`. La geometría
+(en `EPSG:4326`) se reproyecta al CRS del raster (`EPSG:32615`) con
+`rasterio.warp.transform_geom` y se rasteriza con
+`rasterio.features.geometry_mask`.
+
+Ejemplo de sanidad (Atitlán, `2026-04-13`): máscara SCL-agua sola =
+1 218 570 píxeles válidos; máscara combinada (SCL-agua ∩ geometría real) =
+1 218 250 píxeles válidos (≈ 0.03 % menos). La máscara SCL-agua ya era
+bastante ajustada al lago; la geometría real recorta un margen pequeño
+adicional, principalmente en orillas.
+
+### Escala de color fija
+
+`comparison_scale()` calcula el percentil 98 de todos los píxeles válidos
+(máscara combinada) de cianobacteria de ambos lagos, con un piso en
+`UMBRAL_CIANOBACTERIA_ALTO_UGL` (ver ejercicio 8.1) para que la escala
+nunca quede más angosta que el umbral de "valor alto". Es una decisión de
+**visualización** (para que los mapas sean comparables entre fechas y
+lagos), distinta del umbral cuantitativo usado en 8.1/8.2. En la corrida
+actual el percentil 98 global queda por debajo de 10 µg/L, así que la
+escala final usada es `[0.00, 10.00]` µg/L (domina el piso del umbral).
+
+### Fecha "crítica" provisional
+
+Los paneles comparativos usan como fecha crítica la que
+`analisis_temporal.flag_peaks()` ya marca como pico (media + 1 desviación
+estándar) en cada lago. Es una elección provisional, documentada como tal
+en `notebooks/05_analisis_espacial.ipynb`; el ejercicio 7 (comparación
+conjunta de los dos lagos) puede confirmarla o ajustarla.
+
+### Variables de `results/tables/metadata_mapas.csv`
+
+Una fila por mapa generado (individual, comparativo, comparación entre
+lagos, persistencia o interactivo).
+
+| Variable | Tipo | Descripción |
+|---|---|---|
+| `lago` | texto | Lago o lagos (`;` si aplica a varios) |
+| `fecha` | texto | Fecha o fechas (`;` si el mapa combina varias) |
+| `indice` | texto | Siempre `cianobacteria` |
+| `tipo_mapa` | categoría | `individual`, `comparativo`, `comparativo_entre_lagos`, `persistencia` o `interactivo` |
+| `archivo` | texto | Ruta relativa a la raíz del repositorio |
+| `formato` | categoría | `png` o `html` |
+| `vmin`, `vmax` | decimal | Escala de color usada en ese mapa |
+| `umbral_alto_ugl` | decimal | Umbral de "valor alto" usado (solo en mapas de persistencia) |
+| `generado_en` | texto | Marca de tiempo ISO de cuándo se generó el archivo |
+
+### Convención de nombres de archivo
+
+| Contenido | Ruta |
+|---|---|
+| Mapa individual | `results/maps/<lago>_<fecha>_cianobacteria.png` |
+| Panel comparativo por lago | `results/maps/<lago>_comparativo_cianobacteria.png` |
+| Comparación entre lagos (fecha común) | `results/maps/comparacion_lagos_2026-04-13_cianobacteria.png` |
+| Mapa de persistencia | `results/maps/<lago>_persistencia_cianobacteria.png` |
+| Mapa interactivo | `results/maps/<lago>_interactivo.html` |
+| Serie de extensión (8.1) | `results/figures/<lago>_extension_floracion.png` |
+| Contorno real OSM | `data/raw/geojson/lago_<lago>_boundary.geojson` |
+
+## Ejercicio 8.1 - extensión espacial de valores altos
+
+### Umbral de "valor alto"
+
+`UMBRAL_CIANOBACTERIA_ALTO_UGL = 10.0` (`src/config.py`): corresponde al
+**"Alert Level 1"** de la Organización Mundial de la Salud, *Guidelines
+for Safe Recreational Water Environments*, Volumen 1, Capítulo 8 (2003):
+10 µg/L de clorofila-a asociada a dominancia de cianobacterias. Es un
+umbral de salud pública **externo a este conjunto de datos**, fijado antes
+de calcular qué porcentaje de cada lago queda por encima, precisamente
+para no elegirlo según qué tan llamativo se vea el resultado. Se aplica
+únicamente a píxeles que pasan la máscara combinada (geometría real ∩
+SCL-agua) de la escena correspondiente.
+
+### Área de píxel
+
+El CRS de salida de los raster ya es UTM (`EPSG:32615`, metros), por lo
+que el área de un píxel es simplemente `resolucion_m ** 2`
+(`pixel_area_m2` en `src/analisis_espacial.py`): a 10 m de resolución,
+100 m² por píxel. No se construye una rejilla de área equivalente
+adicional porque el CRS proyectado ya da área real directamente.
+
+### Variables de `results/tables/extension_floracion.csv`
+
+Una fila por lago y fecha, solo para las escenas de cianobacteria ya
+calculadas (22 filas, 11 por lago).
+
+| Variable | Tipo | Descripción |
+|---|---|---|
+| `lago` | texto categórico | `atitlan` o `amatitlan` |
+| `fecha` | fecha ISO | Fecha oficial `YYYY-MM-DD` |
+| `umbral_alto_ugl` | decimal | Umbral usado (10.0) |
+| `resolucion_m` | decimal | Resolución de la rejilla (heredada del manifiesto de índices) |
+| `area_pixel_m2` | decimal | `resolucion_m ** 2` |
+| `pixeles_validos_lago` | entero | Píxeles que pasan la máscara combinada |
+| `pixeles_altos` | entero | De los anteriores, cuántos superan el umbral |
+| `area_valida_m2` | decimal | `pixeles_validos_lago * area_pixel_m2` |
+| `area_alta_m2` | decimal | `pixeles_altos * area_pixel_m2` |
+| `porcentaje_alto` | decimal | `100 * area_alta_m2 / area_valida_m2` |
+| `cobertura_valida_pct` | decimal | Heredada de `manifest_indices.csv`, sin recalcular |
+| `quality_flag` | categoría | Heredado de `manifest_indices.csv` (para no ocultar cobertura parcial ni fechas atípicas) |
+
+### Resultado en las 22 escenas
+
+Amatitlán crece de forma marcada en las últimas fechas de la serie:
+36.30 % del área válida el `2026-04-28` y 54.40 % el `2026-06-19` (las
+mismas dos fechas ya marcadas como pico en el ejercicio 4), frente a
+valores por debajo de 8 % en el resto de sus fechas. Atitlán se mantiene
+con una extensión de valores altos mínima durante todo el período (máximo
+0.10 %, la mayoría de las fechas por debajo de 0.05 %).
+
+## Ejercicio 8.2 - zonas persistentes
+
+### Verificación de rejilla entre fechas
+
+Los tres índices de una misma fecha ya se exportan alineados (ejercicio
+3), pero cada fecha se calcula por separado; antes de apilar las 11
+fechas de un lago, `check_grid_consistency(lago)` verifica que compartan
+CRS, `transform`, ancho y alto. En la corrida actual ambos lagos son
+consistentes entre sus 11 fechas (no fue necesario re-alinear). Si no lo
+fueran, `stack_cianobacteria_arrays` reutiliza `align_to_reference` (ya
+usado en el ejercicio 3) para llevar cada fecha a la rejilla de la primera
+fecha lista del lago, sin reprocesar bandas crudas.
+
+### Denominador variable por píxel
+
+`persistence_raster(lago, ..., min_fechas_validas=3)` calcula, por
+píxel: `conteo_valido` (número de las 11 fechas en que ese píxel fue
+válido: pasó SCL-agua ∩ geometría real ∩ no es `NaN`) y `proporcion_alto`
+(`conteo_alto / conteo_valido`). El denominador **no es siempre 11**:
+varía por nubes, sombras o el área válida de cada escena. Con menos de
+`min_fechas_validas` observaciones válidas, el píxel queda `NaN` (dato
+insuficiente), no en cero ni excluido silenciosamente del raster.
+
+### Variables de los GeoTIFF de persistencia
+
+`data/processed/analisis_espacial/<lago>/persistencia/`:
+
+| Archivo | Contenido | Unidad |
+|---|---|---|
+| `proporcion_alto.tif` | Fracción de fechas válidas con cianobacteria ≥ umbral, por píxel | `fraccion_0_1` |
+| `conteo_valido_fechas.tif` | Número de fechas válidas usadas en ese píxel | `conteo_de_fechas` |
+
+### Resultado en ambos lagos
+
+Con `min_fechas_validas = 3`: Amatitlán tiene 72.37 % de su área válida
+con al menos un episodio de valor alto en el período, pero solo 0.15 % es
+persistentemente alta (≥ 50 % de sus fechas válidas) — consistente con que
+el aumento de cianobacteria es reciente (últimas dos fechas), no sostenido
+durante todo el período. Atitlán tiene 0.17 % de su área con algún
+episodio alto y apenas 0.006 % persistentemente alta. Esta comparación es
+un hallazgo descriptivo, no una prueba de causa ambiental; la
+interpretación completa que cruza persistencia, distribuciones y
+correlaciones corresponde al análisis conjunto de los dos lagos.
+
