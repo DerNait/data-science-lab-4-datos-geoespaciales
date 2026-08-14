@@ -27,6 +27,7 @@ try:  # Permite `python src/indices.py` y `python -m src.indices`.
         SENTINEL_HUB_PROCESS_URL,
         SENTINEL_HUB_TOKEN_URL,
         SENTINEL2_L1C_TYPE,
+        UMBRAL_FRACCION_VALORES_ATIPICOS,
         EscenaOficial,
     )
 except ImportError:  # pragma: no cover - ruta usada al ejecutar el archivo
@@ -48,6 +49,7 @@ except ImportError:  # pragma: no cover - ruta usada al ejecutar el archivo
         SENTINEL_HUB_PROCESS_URL,
         SENTINEL_HUB_TOKEN_URL,
         SENTINEL2_L1C_TYPE,
+        UMBRAL_FRACCION_VALORES_ATIPICOS,
         EscenaOficial,
     )
 
@@ -76,8 +78,9 @@ SCL_CLASES_INVALIDAS = (
 )
 
 
+# Falta o es ambiguo un insumo requerido: fecha, lago, banda o raster.
 class InputDataError(ValueError):
-    """Falta o es ambiguo un insumo requerido (fecha, lago, banda o raster)."""
+    pass
 
 
 # --------------------------------------------------------------------------
@@ -85,9 +88,8 @@ class InputDataError(ValueError):
 # --------------------------------------------------------------------------
 
 
+# NDVI = (B08 - B04) / (B08 + B04); nodata si el denominador es 0.
 def compute_ndvi(b04: np.ndarray, b08: np.ndarray) -> np.ndarray:
-    """NDVI = (B08 - B04) / (B08 + B04); nodata donde el denominador es 0."""
-
     b04 = b04.astype(np.float32)
     b08 = b08.astype(np.float32)
     denom = b08 + b04
@@ -96,9 +98,8 @@ def compute_ndvi(b04: np.ndarray, b08: np.ndarray) -> np.ndarray:
     return ndvi.astype(np.float32)
 
 
+# NDWI = (B03 - B08) / (B03 + B08); nodata si el denominador es 0.
 def compute_ndwi(b03: np.ndarray, b08: np.ndarray) -> np.ndarray:
-    """NDWI = (B03 - B08) / (B03 + B08); nodata donde el denominador es 0."""
-
     b03 = b03.astype(np.float32)
     b08 = b08.astype(np.float32)
     denom = b03 + b08
@@ -107,29 +108,31 @@ def compute_ndwi(b03: np.ndarray, b08: np.ndarray) -> np.ndarray:
     return ndwi.astype(np.float32)
 
 
+# True donde SCL no es nube, sombra, nieve, saturado ni nodata.
 def scl_valid_mask(scl: np.ndarray) -> np.ndarray:
-    """True donde SCL no es nubes, sombra, nieve, saturado o nodata."""
-
     invalid = np.isin(scl, SCL_CLASES_INVALIDAS)
     return ~invalid
 
 
+# True donde ninguna banda trae su valor nodata.
+# SCL sola no basta: hay píxeles "agua" con alguna banda en nodata.
+def reflectance_valid_mask(*bands: np.ndarray, nodata: float | None) -> np.ndarray:
+    if nodata is None:
+        return np.ones_like(bands[0], dtype=bool)
+    valid = np.ones_like(bands[0], dtype=bool)
+    for band in bands:
+        valid &= band != nodata
+    return valid
+
+
+# True donde SCL clasifica agua abierta (clase 6).
+# Máscara interina del lago mientras no exista el polígono oficial.
 def scl_water_mask(scl: np.ndarray) -> np.ndarray:
-    """True donde SCL clasifica agua abierta (clase 6).
-
-    Máscara interina del lago mientras no exista el contorno oficial
-    (ver README y codebook: los GeoJSON actuales son bbox de consulta, no
-    el polígono del agua). Es una máscara derivada del dato de cada escena,
-    no un polígono fijo, por lo que ya excluye nubes/sombras de esa fecha
-    sobre el lago. Cuando el GeoJSON oficial esté disponible debe
-    intersectarse con esta máscara, no reemplazarla.
-    """
-
     return scl == SCL_WATER
 
 
 # --------------------------------------------------------------------------
-# Lectura de bandas crudas descargadas por Persona A
+# Lectura de bandas crudas
 # --------------------------------------------------------------------------
 
 
@@ -140,21 +143,16 @@ def _raw_scene_dir(scene: EscenaOficial) -> Path:
 CYANO_RAW_FILENAME_PREFIX = "cyano_ndci_l1c"
 
 
+# Lista los GeoTIFF crudos de una escena.
+# Excluye el raster de cianobacteria para no mezclarlo con B03/B04/B08/SCL.
 def find_scene_raster_files(
     scene: EscenaOficial, *, exclude_prefixes: Sequence[str] = (CYANO_RAW_FILENAME_PREFIX,)
 ) -> list[Path]:
-    """Lista los GeoTIFF crudos de una escena.
-
-    Por defecto excluye el raster de cianobacteria (`cyano_ndci_l1c*.tif`):
-    es un producto de Persona B guardado en la misma carpeta que las bandas
-    L2A de Persona A, pero no debe mezclarse al identificar B03/B04/B08/SCL.
-    """
-
     directory = _raw_scene_dir(scene)
     if not directory.is_dir():
         raise InputDataError(
             f"No existe la carpeta de raster crudos para {scene.lago} {scene.fecha}: "
-            f"{directory}. Ejecute primero la descarga de Persona A "
+            f"{directory}. Ejecute primero la descarga de bandas "
             "(python src/adquisicion.py download ...)."
         )
     files = sorted(directory.glob("*.tif")) + sorted(directory.glob("*.tiff"))
@@ -164,16 +162,10 @@ def find_scene_raster_files(
     return files
 
 
+# Carga las bandas pedidas desde los GeoTIFF crudos de una escena.
+# Soporta un único archivo multibanda (por descripción o por orden) o un
+# archivo por banda (busca el código de banda en el nombre del archivo).
 def load_scene_bands(scene: EscenaOficial, band_names: Sequence[str]) -> dict[str, object]:
-    """Carga las bandas pedidas desde los GeoTIFF crudos de una escena.
-
-    Soporta dos layouts de salida de openEO: un único GeoTIFF multibanda
-    (se asume que el orden de banda coincide con `config.BANDAS_MINIMAS`
-    salvo que el archivo declare descripciones de banda con los nombres
-    exactos) o un archivo por banda (se busca el código de banda, sin
-    distinguir mayúsculas, en el nombre del archivo).
-    """
-
     try:
         import rasterio
     except ImportError as exc:  # pragma: no cover - depende del entorno local
@@ -226,9 +218,8 @@ def load_scene_bands(scene: EscenaOficial, band_names: Sequence[str]) -> dict[st
 # --------------------------------------------------------------------------
 
 
+# Pide un token OAuth (client credentials) para la Process API.
 def sentinel_hub_token() -> str:
-    """Solicita un token OAuth (client credentials) para la Process API."""
-
     try:
         import requests
     except ImportError as exc:  # pragma: no cover - depende del entorno local
@@ -284,14 +275,9 @@ def _cyano_process_body(scene: EscenaOficial, *, width: int, height: int) -> dic
     }
 
 
+# Pide a la Process API el resultado numérico del script de cianobacteria.
+# Se guarda sin modificar como raster crudo; nunca sobrescribe uno existente.
 def request_cyano_layer(scene: EscenaOficial, *, resolution_m: int = RESOLUCION_OBJETIVO_M) -> Path:
-    """Pide a la Process API el resultado numérico del script de cianobacteria.
-
-    Guarda el GeoTIFF devuelto sin modificar en `data/raw/rasters/<lago>/<fecha>/`
-    (es un producto "crudo" recibido de la fuente, igual que las bandas L2A
-    de Persona A) y nunca sobrescribe un archivo existente.
-    """
-
     try:
         import requests
     except ImportError as exc:  # pragma: no cover
@@ -327,9 +313,8 @@ def request_cyano_layer(scene: EscenaOficial, *, resolution_m: int = RESOLUCION_
 # --------------------------------------------------------------------------
 
 
+# Realinea el array a la rejilla de referencia si CRS/transform difieren.
 def align_to_reference(array: np.ndarray, src_profile: dict, ref_profile: dict) -> np.ndarray:
-    """Realinea `array` a la rejilla de `ref_profile` si CRS/transform difieren."""
-
     if (
         src_profile["crs"] == ref_profile["crs"]
         and src_profile["transform"] == ref_profile["transform"]
@@ -374,6 +359,14 @@ def summarize_array(array: np.ndarray) -> dict[str, float]:
     }
 
 
+# Fracción de valores finitos fuera de [low, high]; NaN si no hay válidos.
+def fraction_outside_range(array: np.ndarray, low: float, high: float) -> float:
+    finite = array[np.isfinite(array)]
+    if finite.size == 0:
+        return float("nan")
+    return float(((finite < low) | (finite > high)).sum()) / finite.size
+
+
 def export_index_geotiff(
     array: np.ndarray,
     profile: dict,
@@ -408,7 +401,7 @@ def export_index_geotiff(
 
 
 # --------------------------------------------------------------------------
-# Contrato `data/processed/manifest_indices.csv` (Persona B -> Persona C)
+# Contrato data/processed/manifest_indices.csv (entrega hacia el ejercicio 4)
 # --------------------------------------------------------------------------
 
 
@@ -453,15 +446,15 @@ def expected_manifest_indices_rows() -> list[dict[str, object]]:
                     "pixeles_validos": "",
                     "pixeles_lago": "",
                     "cobertura_valida_pct": "",
+                    "frac_valores_atipicos": "",
                     "quality_flag": "pendiente_calculo",
                 }
             )
     return rows
 
 
+# Valida estructura y cobertura de lago/fecha/índice del manifiesto.
 def validate_manifest_indices(path: Path | None = None) -> list[dict[str, str]]:
-    """Valida estructura y cobertura de lago/fecha/índice del manifiesto."""
-
     rows = read_manifest_indices(path)
     expected_len = len(ESCENAS_OFICIALES) * len(INDICES)
     if len(rows) != expected_len:
@@ -505,9 +498,8 @@ def _update_manifest_indices_row(
     validate_manifest_indices()
 
 
+# Crea el directorio de índices y el manifiesto vacío, de forma idempotente.
 def prepare_indices_repository() -> dict[str, object]:
-    """Crea el directorio de índices y el manifiesto vacío de forma idempotente."""
-
     for directory in (DIR_PROCESSED, DIR_INDICES):
         directory.mkdir(parents=True, exist_ok=True)
     if not RUTA_MANIFEST_INDICES.exists():
@@ -534,17 +526,14 @@ def select_scenes(lago: str | None = None, fecha: str | None = None) -> list[Esc
     return selected
 
 
+# Calcula NDVI, NDWI y, si hay insumo disponible, cianobacteria; actualiza
+# el manifiesto. NDVI/NDWI no dependen de credenciales de Sentinel Hub. Si
+# falta el raster de cianobacteria y require_cyano=False (por defecto), esa
+# escena se omite solo para cianobacteria (queda pendiente_calculo) sin
+# bloquear NDVI/NDWI. Con require_cyano=True lanza InputDataError.
 def compute_indices_for_scene(
-    scene: EscenaOficial, *, fetch_cyano_remote: bool = False
+    scene: EscenaOficial, *, fetch_cyano_remote: bool = False, require_cyano: bool = False
 ) -> dict[str, Path]:
-    """Calcula NDVI, NDWI y cianobacteria para una escena y actualiza el manifiesto.
-
-    Requiere que Persona A ya haya descargado las bandas L2A crudas de la
-    escena (B03, B04, B08, SCL) y, para cianobacteria, un GeoTIFF crudo en
-    `data/raw/rasters/<lago>/<fecha>/cyano_ndci_l1c.tif` (obtenido con
-    `request_cyano_layer`, que puede correrse antes por separado).
-    """
-
     prepare_indices_repository()
 
     bands = load_scene_bands(scene, ("B03", "B04", "B08", "SCL"))
@@ -553,32 +542,38 @@ def compute_indices_for_scene(
 
     valid = scl_valid_mask(arrays["SCL"])
     water = scl_water_mask(arrays["SCL"])
-    lake_valid = valid & water
+    reflectance_valid = reflectance_valid_mask(
+        arrays["B03"], arrays["B04"], arrays["B08"], nodata=profile.get("nodata")
+    )
+    lake_valid = valid & water & reflectance_valid
 
     ndvi = compute_ndvi(arrays["B04"], arrays["B08"])
     ndwi = compute_ndwi(arrays["B03"], arrays["B08"])
     ndvi = np.where(lake_valid, ndvi, np.nan)
     ndwi = np.where(lake_valid, ndwi, np.nan)
 
+    arrays_by_index: dict[str, np.ndarray] = {"ndvi": ndvi, "ndwi": ndwi}
+
     cyano_dir = _raw_scene_dir(scene)
     cyano_candidates = sorted(cyano_dir.glob("cyano_ndci_l1c*.tif"))
-    if not cyano_candidates:
-        if not fetch_cyano_remote:
-            raise InputDataError(
-                f"No hay raster crudo de cianobacteria para {scene.lago} {scene.fecha}. "
-                "Ejecute request_cyano_layer(scene) primero o pase fetch_cyano_remote=True."
-            )
+    if not cyano_candidates and fetch_cyano_remote:
         cyano_candidates = [request_cyano_layer(scene)]
 
-    import rasterio
+    if not cyano_candidates and require_cyano:
+        raise InputDataError(
+            f"No hay raster crudo de cianobacteria para {scene.lago} {scene.fecha}. "
+            "Ejecute request_cyano_layer(scene) primero o pase fetch_cyano_remote=True."
+        )
 
-    with rasterio.open(cyano_candidates[0]) as dataset:
-        cyano_raw = dataset.read(1).astype(np.float32)
-        cyano_profile = dataset.profile.copy()
-    cyano = align_to_reference(cyano_raw, cyano_profile, profile)
+    if cyano_candidates:
+        import rasterio
+
+        with rasterio.open(cyano_candidates[0]) as dataset:
+            cyano_raw = dataset.read(1).astype(np.float32)
+            cyano_profile = dataset.profile.copy()
+        arrays_by_index["cianobacteria"] = align_to_reference(cyano_raw, cyano_profile, profile)
 
     outputs: dict[str, Path] = {}
-    arrays_by_index = {"ndvi": ndvi, "ndwi": ndwi, "cianobacteria": cyano}
     metodo_by_index = {
         "ndvi": "local (B04,B08 L2A) + máscara SCL agua/válido",
         "ndwi": "local (B03,B08 L2A) + máscara SCL agua/válido",
@@ -594,9 +589,17 @@ def compute_indices_for_scene(
         "cianobacteria": CYANO_SCRIPT["formula_version"],
     }
 
+    rango_valido_by_index = {
+        "ndvi": (-1.0, 1.0),
+        "ndwi": (-1.0, 1.0),
+        "cianobacteria": CYANO_SCRIPT["rango_valido"],
+    }
+
     out_dir = DIR_INDICES / scene.lago / scene.fecha
     for indice, array in arrays_by_index.items():
         stats = summarize_array(array)
+        low, high = rango_valido_by_index[indice]
+        frac_atipicos = fraction_outside_range(array, low, high)
         out_path = out_dir / f"{indice}.tif"
         export_index_geotiff(
             array,
@@ -609,11 +612,12 @@ def compute_indices_for_scene(
             unidad=unidad_by_index[indice],
         )
         relative_path = out_path.resolve().relative_to(RAIZ.resolve()).as_posix()
-        quality = (
-            "cobertura_parcial_oficial"
-            if scene.cobertura_valida_oficial_pct is not None
-            else "calculado"
-        )
+        if scene.cobertura_valida_oficial_pct is not None:
+            quality = "cobertura_parcial_oficial"
+        elif frac_atipicos == frac_atipicos and frac_atipicos > UMBRAL_FRACCION_VALORES_ATIPICOS:
+            quality = "revisar_valores_atipicos"
+        else:
+            quality = "calculado"
         _update_manifest_indices_row(
             scene.lago,
             scene.fecha,
@@ -628,6 +632,7 @@ def compute_indices_for_scene(
             pixeles_validos=stats["valid_pixels"],
             pixeles_lago=int(lake_valid.sum()),
             cobertura_valida_pct=stats["coverage_pct"],
+            frac_valores_atipicos=round(frac_atipicos, 4) if frac_atipicos == frac_atipicos else "",
             quality_flag=quality,
         )
         outputs[indice] = out_path
