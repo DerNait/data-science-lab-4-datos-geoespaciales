@@ -3,10 +3,11 @@
 **CC3084 · Data Science · Universidad del Valle de Guatemala · Semestre II, 2026**
 
 Análisis multitemporal de los lagos Atitlán y Amatitlán con imágenes
-Sentinel-2. Esta etapa implementa los ejercicios 1 a 3: conexión con
+Sentinel-2. Esta etapa implementa los ejercicios 1 a 4: conexión con
 Copernicus Data Space mediante openEO, definición reproducible de las 22
-escenas oficiales, descarga limitada a los AOI y bandas necesarias, y el
-cálculo de NDVI, NDWI y el índice de cianobacteria.
+escenas oficiales, descarga limitada a los AOI y bandas necesarias, el
+cálculo de NDVI, NDWI y el índice de cianobacteria, y el resumen y análisis
+temporal de cianobacteria por lago y fecha.
 
 ## Estado de los ejercicios 1 y 2
 
@@ -37,7 +38,23 @@ cálculo de NDVI, NDWI y el índice de cianobacteria.
 - Los tres índices de una fecha se exportan alineados a la misma rejilla, en
   GeoTIFF de una sola banda `float32`.
 - `data/processed/manifest_indices.csv` es el contrato de 66 filas (22
-  escenas x 3 índices) que Persona C debe usar para el ejercicio 4.
+  escenas x 3 índices) que consume el ejercicio 4.
+
+## Estado del ejercicio 4
+
+- `src/analisis_temporal.py` valida `manifest_indices.csv` y reporta
+  cuántas de las 22 escenas de cianobacteria ya están listas antes de
+  calcular nada; ninguna fila pendiente se completa manualmente.
+- Con las escenas que sí tienen raster calculado, construye
+  `data/processed/tablas/resumen_temporal.csv` (promedio, mediana,
+  desviación estándar, píxeles válidos y cobertura por lago y fecha).
+- `notebooks/04_analisis_temporal.ipynb` grafica la serie por lago, marca
+  picos con un criterio explícito (media + 1 desviación estándar de la
+  propia serie) y distingue la fecha de cobertura parcial de Amatitlán del
+  resto de la serie.
+- Como el ejercicio 3 todavía no ha calculado cianobacteria para ninguna
+  escena, el resumen temporal y las gráficas están vacíos por ahora; el
+  cuaderno lo reporta explícitamente en lugar de fallar.
 
 ## Estructura
 
@@ -50,15 +67,17 @@ cálculo de NDVI, NDWI y el índice de cianobacteria.
 │   │   └── manifest_escenas.csv     # las 22 escenas oficiales
 │   └── processed/
 │       ├── indices/                 # GeoTIFF de NDVI, NDWI y cianobacteria
-│       ├── tablas/
-│       └── manifest_indices.csv     # contrato de 66 filas hacia Persona C
+│       ├── tablas/                  # resumen_temporal.csv
+│       └── manifest_indices.csv     # contrato de 66 filas hacia el ejercicio 4
 ├── notebooks/
 │   ├── 01_02_conexion_y_descarga.ipynb
-│   └── 03_indices.ipynb
+│   ├── 03_indices.ipynb
+│   └── 04_analisis_temporal.ipynb
 ├── src/
 │   ├── config.py                    # coordenadas, fechas, script de cianobacteria y config común
 │   ├── adquisicion.py               # preparación, consulta y descarga openEO
 │   ├── indices.py                   # NDVI, NDWI, cianobacteria y manifest_indices.csv
+│   ├── analisis_temporal.py         # resumen_temporal.csv, picos y validación del manifiesto de índices
 │   ├── evalscripts/                 # script de cianobacteria (original y adaptación numérica)
 │   ├── raster_utils.py              # validación local de GeoTIFF
 │   └── run_pipeline.py              # preparación segura de esta etapa
@@ -209,6 +228,41 @@ Solo después de revisar la escena de prueba:
 python src/indices.py compute --confirm-batch --fetch-cyano-remote
 ```
 
+## Flujo reproducible del ejercicio 4
+
+No requiere credenciales: solo lee `manifest_indices.csv` y los GeoTIFF de
+cianobacteria que el ejercicio 3 ya haya exportado.
+
+### 1. Ver cuántas escenas de cianobacteria están listas
+
+```powershell
+python src/analisis_temporal.py report
+```
+
+Cuenta, sobre las 22 escenas oficiales, cuántas tienen ya un raster de
+cianobacteria calculado y lista las fechas pendientes.
+
+### 2. Validar el manifiesto de índices
+
+```powershell
+python src/analisis_temporal.py validate
+```
+
+Valida estructura y, para las filas ya listas, que declaren unidad, dtype,
+píxeles válidos y cobertura. No corrige nada: si falta un campo, indica
+que debe corregirse en el cálculo de índices.
+
+### 3. Construir el resumen temporal
+
+```powershell
+python src/analisis_temporal.py build
+```
+
+Escribe `data/processed/tablas/resumen_temporal.csv` con las escenas de
+cianobacteria ya calculadas (promedio, mediana, desviación estándar,
+píxeles válidos y cobertura por lago y fecha). Si todavía no hay ninguna
+escena calculada, no escribe nada y lo indica explícitamente.
+
 ## Uso de los notebooks
 
 Abrir Jupyter desde la raíz:
@@ -216,14 +270,18 @@ Abrir Jupyter desde la raíz:
 ```powershell
 jupyter notebook notebooks/01_02_conexion_y_descarga.ipynb
 jupyter notebook notebooks/03_indices.ipynb
+jupyter notebook notebooks/04_analisis_temporal.ipynb
 ```
 
-Ambos notebooks se pueden ejecutar de arriba a abajo sin conexión ni
-credenciales porque las celdas remotas vienen desactivadas por bandera
-(`EJECUTAR_...`). Para autenticar, descargar o calcular cianobacteria vía
+Los tres notebooks se pueden ejecutar de arriba a abajo sin conexión ni
+credenciales. Los dos primeros desactivan sus celdas remotas por bandera
+(`EJECUTAR_...`); para autenticar, descargar o calcular cianobacteria vía
 Sentinel Hub, se cambia únicamente la bandera indicada en la celda
 correspondiente. Las operaciones demostrativas siempre apuntan a una sola
-escena; el lote de 22 escenas se confirma aparte.
+escena; el lote de 22 escenas se confirma aparte. El cuaderno 04 no tiene
+banderas remotas: valida el manifiesto de índices y grafica lo que ya esté
+calculado; si todavía no hay ninguna escena lista, lo reporta en vez de
+fallar.
 
 ## Limitación geométrica actual
 

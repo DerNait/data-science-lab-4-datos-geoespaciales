@@ -203,3 +203,43 @@ e índice: 22 escenas x 3 índices = 66 filas.
 de `amatitlan 2026-02-07`, heredando la advertencia de
 `manifest_escenas.csv`.
 
+## Ejercicio 4 - análisis temporal de cianobacteria
+
+`src/analisis_temporal.py` lee únicamente `manifest_indices.csv` (nunca
+rutas propias) para construir `data/processed/tablas/resumen_temporal.csv`.
+No corrige raster ni completa filas pendientes: si una fila lista de
+cianobacteria tiene un campo vacío, se lanza un error para que se corrija
+en el cálculo de índices, no en este paso.
+
+### Variables de `data/processed/tablas/resumen_temporal.csv`
+
+Una fila por lago y fecha, solo para las escenas de cianobacteria que ya
+tienen `quality_flag` distinto de `pendiente_calculo`.
+
+| Variable | Tipo | Descripción |
+|---|---|---|
+| `lago` | texto categórico | `atitlan` o `amatitlan` |
+| `fecha` | fecha ISO | Fecha oficial `YYYY-MM-DD` |
+| `cyano_promedio` | decimal | Promedio de cianobacteria sobre los píxeles válidos del raster |
+| `cyano_mediana` | decimal | Mediana de los mismos píxeles válidos |
+| `cyano_std` | decimal | Desviación estándar de los mismos píxeles válidos |
+| `pixeles_validos` | entero | Píxeles no `nodata` usados en las estadísticas anteriores |
+| `cobertura_valida_pct` | decimal | `100 * pixeles_validos / pixeles_totales` del raster |
+| `quality_flag` | categoría | Heredado de `manifest_indices.csv`: `calculado` o `cobertura_parcial_oficial` |
+
+### Criterio de "pico"
+
+Una fecha se marca como pico si su `cyano_promedio` supera en
+`PICO_DESVIACIONES` (1.0 por defecto, `src/config.py`) desviaciones
+estándar el promedio de la propia serie del lago. La media y desviación de
+referencia se calculan solo con fechas de `quality_flag == "calculado"`;
+las fechas de cobertura parcial se evalúan contra ese mismo umbral pero no
+participan en calcularlo, para no distorsionar la referencia con una
+escena menos confiable. Con menos de dos fechas completas en un lago no
+hay suficiente información para un umbral significativo y ninguna fecha se
+marca como pico.
+
+Es un umbral descriptivo y repetible, no un modelo de series de tiempo:
+cada lago tiene 11 observaciones irregulares, insuficientes para afirmar
+estacionalidad o tendencias estadísticamente robustas.
+

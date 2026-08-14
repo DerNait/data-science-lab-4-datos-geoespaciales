@@ -99,6 +99,29 @@ MANIFEST_INDICES_FIELDS = (
     "quality_flag",
 )
 
+# --- Ejercicio 4 (Persona C): resumen y análisis temporal -----------------
+
+RUTA_RESUMEN_TEMPORAL = DIR_TABLAS / "resumen_temporal.csv"
+
+RESUMEN_TEMPORAL_FIELDS = (
+    "lago",
+    "fecha",
+    "cyano_promedio",
+    "cyano_mediana",
+    "cyano_std",
+    "pixeles_validos",
+    "cobertura_valida_pct",
+    "quality_flag",
+)
+
+# Criterio explícito de "pico" en el análisis temporal: una fecha se marca
+# como pico si su promedio de cianobacteria supera en PICO_DESVIACIONES
+# desviaciones estándar el promedio de la propia serie del lago (solo con
+# fechas de cobertura completa, quality_flag == "calculado"). No es un
+# modelo de series de tiempo, solo un umbral descriptivo documentado y
+# repetible.
+PICO_DESVIACIONES = 1.0
+
 # Copernicus Data Space Ecosystem / Sentinel Hub (Process API) para obtener
 # el resultado numérico del script de cianobacteria. Son credenciales de
 # tipo OAuth client (Dashboard > User Settings > OAuth clients), distintas
