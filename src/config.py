@@ -29,18 +29,14 @@ BANDAS_MINIMAS = ("B03", "B04", "B08", "SCL")
 
 CRS_AOI = "EPSG:4326"
 
-# --- Ejercicio 3 (Persona B): índices NDVI, NDWI y cianobacteria ---------
+# --- Ejercicio 3: índices NDVI, NDWI y cianobacteria ---------------------
 
 DIR_EVALSCRIPTS = RAIZ / "src" / "evalscripts"
 RUTA_CYANO_EVALSCRIPT_ORIGINAL = DIR_EVALSCRIPTS / "cyano_ndci_l1c_original.js"
 RUTA_CYANO_EVALSCRIPT_NUMERICO = DIR_EVALSCRIPTS / "cyano_ndci_l1c_numeric.js"
 
-# Script elegido del catálogo https://custom-scripts.sentinel-hub.com tras
-# revisar varios candidatos para Sentinel-2 (NDCI L1C, Se2WaQ, Maximum Peak
-# Height Bloom Index, APA Script). Se documenta aquí, en codebook.md y en el
-# notebook 03_indices.ipynb el porqué de la elección: es el único de los
-# candidatos nombrado explícitamente para cianobacteria, con fórmula y
-# umbrales públicos y auditables (no es una caja negra).
+# Script del catálogo custom-scripts.sentinel-hub.com, elegido entre varios
+# candidatos: es el único nombrado para cianobacteria y su fórmula es pública.
 CYANO_SCRIPT = {
     "nombre": "CyanoLakes Chlorophyll-a L1C (NDCI)",
     "autores": "Jeremy Kravitz & Mark Matthews (2020)",
@@ -96,10 +92,16 @@ MANIFEST_INDICES_FIELDS = (
     "pixeles_validos",
     "pixeles_lago",
     "cobertura_valida_pct",
+    "frac_valores_atipicos",
     "quality_flag",
 )
 
-# --- Ejercicio 4 (Persona C): resumen y análisis temporal -----------------
+# NDVI/NDWI están acotados a [-1, 1]; reflectancia casi nula sobre agua
+# profunda puede romper esa cota. Si más de este umbral de píxeles queda
+# fuera de rango, se marca quality_flag="revisar_valores_atipicos".
+UMBRAL_FRACCION_VALORES_ATIPICOS = 0.10
+
+# --- Ejercicio 4: resumen y análisis temporal -----------------------------
 
 RUTA_RESUMEN_TEMPORAL = DIR_TABLAS / "resumen_temporal.csv"
 
@@ -122,11 +124,8 @@ RESUMEN_TEMPORAL_FIELDS = (
 # repetible.
 PICO_DESVIACIONES = 1.0
 
-# Copernicus Data Space Ecosystem / Sentinel Hub (Process API) para obtener
-# el resultado numérico del script de cianobacteria. Son credenciales de
-# tipo OAuth client (Dashboard > User Settings > OAuth clients), distintas
-# de la sesión OIDC personal usada por openEO. Nunca se escriben valores
-# reales en config.py, .env.example ni en el notebook.
+# Credenciales OAuth client de Sentinel Hub (Dashboard > OAuth clients),
+# distintas de la sesión OIDC de openEO. Nunca van valores reales aquí.
 SENTINEL_HUB_TOKEN_URL = os.getenv(
     "SENTINEL_HUB_TOKEN_URL",
     "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
