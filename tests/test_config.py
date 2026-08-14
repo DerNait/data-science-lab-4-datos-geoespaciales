@@ -3,7 +3,15 @@ from __future__ import annotations
 import unittest
 from collections import Counter
 
-from src.config import BANDAS_MINIMAS, ESCENAS_OFICIALES, LAGOS, validate_configuration
+from src.config import (
+    BANDAS_MINIMAS,
+    ESCENAS_OFICIALES,
+    LAGOS,
+    OSM_LAKE_NAME_CANDIDATES,
+    RUTA_GEOJSON_BOUNDARY,
+    UMBRAL_CIANOBACTERIA_ALTO_UGL,
+    validate_configuration,
+)
 
 
 class ConfigTest(unittest.TestCase):
@@ -35,6 +43,13 @@ class ConfigTest(unittest.TestCase):
         )
         self.assertEqual(scene.cobertura_valida_oficial_pct, 57.1)
         self.assertIn("57.1", scene.observacion_oficial)
+
+    def test_boundary_paths_cover_both_lakes(self) -> None:
+        self.assertEqual(set(RUTA_GEOJSON_BOUNDARY), set(LAGOS))
+        self.assertEqual(set(OSM_LAKE_NAME_CANDIDATES), set(LAGOS))
+
+    def test_alert_threshold_is_positive(self) -> None:
+        self.assertGreater(UMBRAL_CIANOBACTERIA_ALTO_UGL, 0)
 
 
 if __name__ == "__main__":

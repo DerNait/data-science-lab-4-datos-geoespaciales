@@ -6,4 +6,6 @@ jupyter==1.1.1
 nbconvert==7.16.6
 requests==2.34.2
 matplotlib==3.11.1
+shapely==2.1.2
+folium==0.20.0
 

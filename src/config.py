@@ -137,6 +137,71 @@ SENTINEL_HUB_CLIENT_ID = os.getenv("SENTINEL_HUB_CLIENT_ID", "")
 SENTINEL_HUB_CLIENT_SECRET = os.getenv("SENTINEL_HUB_CLIENT_SECRET", "")
 SENTINEL2_L1C_TYPE = "S2L1C"
 
+# --- Ejercicio 5 / 8.1 / 8.2: análisis espacial ---------------------------
+
+DIR_RESULTS = RAIZ / "results"
+DIR_RESULTS_MAPS = DIR_RESULTS / "maps"
+DIR_RESULTS_TABLES = DIR_RESULTS / "tables"
+DIR_RESULTS_FIGURES = DIR_RESULTS / "figures"
+DIR_ANALISIS_ESPACIAL = DIR_PROCESSED / "analisis_espacial"
+
+# Contorno real del lago (OpenStreetMap), cacheado sin sobrescribir el bbox
+# de consulta ya existente. Ver src/analisis_espacial.py:request_lake_boundary.
+RUTA_GEOJSON_BOUNDARY = {
+    "atitlan": DIR_GEOJSON / "lago_atitlan_boundary.geojson",
+    "amatitlan": DIR_GEOJSON / "lago_amatitlan_boundary.geojson",
+}
+
+OVERPASS_API_URL = os.getenv(
+    "OVERPASS_API_URL", "https://overpass-api.de/api/interpreter"
+)
+
+# Nombres candidatos a buscar en OSM (natural=water), en orden de intento.
+# Se prueban ambos idiomas porque el tag `name` de OSM no está estandarizado
+# entre español e inglés para estos dos lagos.
+OSM_LAKE_NAME_CANDIDATES = {
+    "atitlan": ("Lago de Atitlán", "Lake Atitlán"),
+    "amatitlan": ("Lago de Amatitlán", "Lake Amatitlán"),
+}
+
+# Umbral de "valor alto" de cianobacteria para los ejercicios 8.1 y 8.2:
+# "Alert Level 1" de WHO (2003), "Guidelines for Safe Recreational Water
+# Environments", Volumen 1, Capítulo 8 (10 µg/L de clorofila-a asociada a
+# dominancia de cianobacterias). Es un umbral de salud pública externo al
+# dataset, fijado antes de calcular qué porcentaje del lago queda por
+# encima, para no elegirlo según qué tan llamativo se vea el resultado.
+UMBRAL_CIANOBACTERIA_ALTO_UGL = 10.0
+
+RUTA_EXTENSION_FLORACION = DIR_RESULTS_TABLES / "extension_floracion.csv"
+EXTENSION_FLORACION_FIELDS = (
+    "lago",
+    "fecha",
+    "umbral_alto_ugl",
+    "resolucion_m",
+    "area_pixel_m2",
+    "pixeles_validos_lago",
+    "pixeles_altos",
+    "area_valida_m2",
+    "area_alta_m2",
+    "porcentaje_alto",
+    "cobertura_valida_pct",
+    "quality_flag",
+)
+
+RUTA_METADATA_MAPAS = DIR_RESULTS_TABLES / "metadata_mapas.csv"
+METADATA_MAPAS_FIELDS = (
+    "lago",
+    "fecha",
+    "indice",
+    "tipo_mapa",
+    "archivo",
+    "formato",
+    "vmin",
+    "vmax",
+    "umbral_alto_ugl",
+    "generado_en",
+)
+
 
 @dataclass(frozen=True)
 class Lago:
@@ -260,6 +325,13 @@ def validate_configuration() -> None:
     )
     if partial.cobertura_valida_oficial_pct != 57.1:
         raise ValueError("Se perdió la advertencia de cobertura parcial oficial")
+
+    if set(RUTA_GEOJSON_BOUNDARY) != set(LAGOS):
+        raise ValueError("RUTA_GEOJSON_BOUNDARY debe declarar exactamente los lagos de LAGOS")
+    if set(OSM_LAKE_NAME_CANDIDATES) != set(LAGOS):
+        raise ValueError("OSM_LAKE_NAME_CANDIDATES debe declarar exactamente los lagos de LAGOS")
+    if UMBRAL_CIANOBACTERIA_ALTO_UGL <= 0:
+        raise ValueError("UMBRAL_CIANOBACTERIA_ALTO_UGL debe ser positivo")
 
 
 validate_configuration()
