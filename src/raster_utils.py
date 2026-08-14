@@ -46,7 +46,10 @@ def inspect_geotiff(path: Path) -> RasterMetadata:
 
         values = dataset.read(masked=True)
         mask = np.ma.getmaskarray(values)
-        finite = np.isfinite(values.filled(np.nan))
+        # `filled(np.nan)` falla en rasters enteros porque NaN no puede
+        # representarse en int16. La máscara ya identifica el nodata, por lo
+        # que basta comprobar finitud directamente sobre los datos subyacentes.
+        finite = np.isfinite(np.ma.getdata(values))
         valid_by_band = (~mask) & finite
         valid_by_pixel = np.all(valid_by_band, axis=0)
         valid_pixels = int(valid_by_pixel.sum())
@@ -77,4 +80,3 @@ def inspect_scene_directory(directory: Path) -> list[RasterMetadata]:
     if not candidates:
         raise FileNotFoundError(f"No se encontraron GeoTIFF en {directory}")
     return [inspect_geotiff(path) for path in candidates]
-
