@@ -1,0 +1,34 @@
+{
+  "type": "FeatureCollection",
+  "name": "aoi_amatitlan_bbox",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "lago": "amatitlan",
+        "nombre": "Lago de Amatitlán",
+        "geometry_role": "query_bbox",
+        "is_lake_boundary": false,
+        "source": "Coordenadas del enunciado del Laboratorio 4"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-90.638065, 14.412347],
+            [-90.512924, 14.412347],
+            [-90.512924, 14.493799],
+            [-90.638065, 14.493799],
+            [-90.638065, 14.412347]
+          ]
+        ]
+      }
+    }
+  ]
+}

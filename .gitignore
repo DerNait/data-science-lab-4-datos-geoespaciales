@@ -1,0 +1,37 @@
+# Entornos y cachés de Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+
+# Credenciales y configuración local
+.env
+.env.*
+!.env.example
+*.pem
+secrets.yaml
+
+# Raster originales y derivados: son pesados y se regeneran con el pipeline
+data/raw/rasters/*
+!data/raw/rasters/.gitkeep
+data/processed/indices/*
+!data/processed/indices/.gitkeep
+
+# Archivos temporales de descargas y ejecución
+data/tmp/
+*.part
+*.tmp
+*.log
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
