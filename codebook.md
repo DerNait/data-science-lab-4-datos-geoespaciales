@@ -575,3 +575,59 @@ medianas menores y su fecha final seleccionada (`2026-07-22`) conserva la
 bandera `revisar_valores_atipicos`, por lo que la diferencia se interpreta con
 cautela.
 
+## Ejercicio 7 - comparación de lagos
+
+### `results/tables/comparacion_lagos.csv`
+
+Una fila por lago (2 filas). Consolida columnas ya calculadas por los
+ejercicios 4 (`resumen_temporal.csv`), 8.1 (`extension_floracion.csv`), 8.2
+(resumen de persistencia, ver más abajo) y 6 (`correlaciones_por_lago.csv`);
+`src/comparacion_lagos.py` no vuelve a abrir raster.
+
+| Variable | Descripción |
+|---|---|
+| `n_fechas_calculado` / `n_fechas_total` | Fechas sin advertencia de calidad frente al total de 11 |
+| `cyano_promedio_general`, `cyano_mediana_general` | Estadísticos sobre las 11 fechas (no solo las "calculado", para no sesgar la base de comparación entre lagos) |
+| `frecuencia_fechas_sobre_umbral`, `pct_fechas_sobre_umbral` | Fechas cuyo `cyano_promedio` iguala o supera `UMBRAL_CIANOBACTERIA_ALTO_UGL` |
+| `porcentaje_alto_promedio`, `porcentaje_alto_maximo`, `fecha_porcentaje_alto_maximo` | De `extension_floracion.csv` |
+| `pct_area_alguna_vez_alta`, `pct_area_persistente` | Copiados de `RESUMEN_PERSISTENCIA` en `config.py` (ver nota abajo) |
+| `correlacion_ndvi_pearson_mediana`, `correlacion_ndwi_pearson_mediana` | De `correlaciones_por_lago.csv` |
+| `tendencia_temporal` | `creciente` / `decreciente` / `estable`: compara el promedio de la primera mitad de fechas contra la segunda mitad (umbral de diferencia: 0.5 µg/L) |
+
+`RESUMEN_PERSISTENCIA` en `config.py` guarda los dos porcentajes de
+persistencia (8.2) como constantes documentadas, copiados de
+`informe/secciones/08_2_zonas_persistentes.md`, porque esos raster derivados
+no se versionan y `comparacion_lagos.py` no depende de reabrirlos. Si se
+re-ejecuta el ejercicio 8.2, esa constante debe actualizarse a mano.
+
+**Nota de confiabilidad:** Atitlán tiene solo 5 de 11 fechas sin advertencia
+de calidad (`revisar_valores_atipicos` por la inestabilidad numérica sobre
+agua profunda, ver ejercicio 3), frente a 10 de 11 en Amatitlán. Parte de la
+diferencia observada entre lagos podría reflejar, en alguna medida, esa menor
+confiabilidad relativa de los datos de Atitlán, no solo una diferencia
+biológica real; el ejercicio 7 discute esto explícitamente en vez de
+omitirlo.
+
+## Ejercicio 8.4 - patrón estacional
+
+### `results/tables/patron_estacional.csv`
+
+Agrupa `resumen_temporal.csv` por lago y estación climática de Guatemala
+(`MESES_ESTACION_SECA = nov-abr`, `MESES_ESTACION_LLUVIOSA = may-oct`, según
+el patrón general documentado por el INSIVUMEH). Es una agrupación de
+calendario, no una medición meteorológica del laboratorio.
+
+| Variable | Descripción |
+|---|---|
+| `lago`, `estacion` | `seca` o `lluviosa` |
+| `n_fechas` | Cuántas de las 11 fechas oficiales caen en esa estación |
+| `cyano_promedio`, `cyano_mediana`, `cyano_std` | Sobre `cyano_promedio` de `resumen_temporal.csv` |
+| `fechas` | Fechas incluidas, separadas por `;` |
+
+Amatitlán solo tiene `n_fechas=1` en época lluviosa (2026-06-19, que además es
+su fecha con más cianobacteria de toda la serie), así que no se puede separar
+un efecto estacional de la tendencia creciente general ya documentada en el
+ejercicio 4. Atitlán no muestra diferencia relevante entre estaciones (1.14 vs.
+1.18 µg/L). Con 11 fechas irregulares por lago no corresponde afirmar una
+estacionalidad robusta, solo describir estos indicios.
+

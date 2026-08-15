@@ -101,6 +101,25 @@ de alineación, máscara y control de calidad.
 - Las tablas están en `results/tables/`, las figuras en `results/figures/` y
   los mapas de diferencia en `results/maps/`.
 
+## Estado del ejercicio 7, 8.4 y 8.5
+
+- `src/comparacion_lagos.py` consolida en `results/tables/comparacion_lagos.csv`
+  lo que ya calcularon los ejercicios 4, 5, 6, 8.1 y 8.2 (promedio temporal,
+  frecuencia sobre el umbral, extensión, persistencia y correlación mediana
+  con NDVI/NDWI) en una sola fila por lago; no vuelve a abrir raster.
+- Amatitlán promedia ~6.29 µg/L frente a ~1.15 µg/L de Atitlán (más de 5x),
+  con tendencia creciente frente a estable; ambos lagos comparten el mismo
+  umbral de "valor alto" (10 µg/L) fijado en el ejercicio 5.
+- `results/tables/patron_estacional.csv` (`notebooks/08_4_patron_estacional.ipynb`)
+  agrupa las 11 fechas de cada lago en seca/lluviosa; Atitlán no muestra
+  diferencia relevante y Amatitlán solo tiene una fecha de época lluviosa
+  (`n=1`), así que no se afirma una estacionalidad robusta.
+- `notebooks/07_comparacion_lagos.ipynb` y `notebooks/08_5_interpretacion_global.ipynb`
+  separan explícitamente hallazgos sólidos, indicios y limitaciones, y citan
+  contexto documentado (autoridades de cuenca AMSA/AMSCLAE, profundidad de
+  cada lago) sin presentarlo como causa demostrada por los datos del
+  laboratorio.
+
 ## Estructura
 
 ```text
@@ -121,13 +140,16 @@ de alineación, máscara y control de calidad.
 │   ├── 04_analisis_temporal.ipynb
 │   ├── 05_analisis_espacial.ipynb
 │   ├── 06_correlaciones.ipynb
+│   ├── 07_comparacion_lagos.ipynb
 │   ├── 08_1_extension_floracion.ipynb
 │   ├── 08_2_zonas_persistentes.ipynb
-│   └── 08_3_distribuciones.ipynb
+│   ├── 08_3_distribuciones.ipynb
+│   ├── 08_4_patron_estacional.ipynb
+│   └── 08_5_interpretacion_global.ipynb
 ├── results/
 │   ├── maps/                        # mapas espaciales, persistencia y diferencias temporales
 │   ├── figures/                     # series, correlaciones y distribuciones
-│   └── tables/                      # resúmenes espaciales, correlaciones y distribuciones
+│   └── tables/                      # resúmenes espaciales, correlaciones, distribuciones y comparación
 ├── src/
 │   ├── config.py                    # coordenadas, fechas, script de cianobacteria y config común
 │   ├── adquisicion.py               # preparación, consulta y descarga openEO
@@ -135,6 +157,7 @@ de alineación, máscara y control de calidad.
 │   ├── analisis_temporal.py         # resumen_temporal.csv, picos y validación del manifiesto de índices
 │   ├── analisis_espacial.py         # contorno real, mapas, extensión de floración y persistencia
 │   ├── correlaciones.py             # correlaciones, distribuciones y mapas de diferencia
+│   ├── comparacion_lagos.py         # tabla comparativa Atitlán vs. Amatitlán y patrón estacional
 │   ├── evalscripts/                 # script de cianobacteria (original y adaptación numérica)
 │   ├── raster_utils.py              # validación local de GeoTIFF
 │   └── run_pipeline.py              # preparación segura de esta etapa
