@@ -1,0 +1,3 @@
+lago,n_fechas_calculado,n_fechas_total,cyano_promedio_general,cyano_mediana_general,frecuencia_fechas_sobre_umbral,pct_fechas_sobre_umbral,porcentaje_alto_promedio,porcentaje_alto_maximo,fecha_porcentaje_alto_maximo,pct_area_alguna_vez_alta,pct_area_persistente,correlacion_ndvi_pearson_mediana,correlacion_ndwi_pearson_mediana,tendencia_temporal
+amatitlan,10,11,6.2906,5.7475,1,9.09,10.9373,54.3977,2026-06-19,72.4,0.15,0.66681644,-0.59185743,creciente
+atitlan,5,11,1.1535,1.1416,0,0.0,0.0264,0.1042,2026-07-22,0.17,0.006,0.02816262,-4.909e-05,estable
