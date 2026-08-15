@@ -218,6 +218,54 @@ METADATA_MAPAS_FIELDS = (
     "generado_en",
 )
 
+# --- Ejercicio 7 / 8.4 / 8.5: comparación de lagos, estacionalidad --------
+
+RUTA_COMPARACION_LAGOS = DIR_RESULTS_TABLES / "comparacion_lagos.csv"
+COMPARACION_LAGOS_FIELDS = (
+    "lago",
+    "n_fechas_calculado",
+    "n_fechas_total",
+    "cyano_promedio_general",
+    "cyano_mediana_general",
+    "frecuencia_fechas_sobre_umbral",
+    "pct_fechas_sobre_umbral",
+    "porcentaje_alto_promedio",
+    "porcentaje_alto_maximo",
+    "fecha_porcentaje_alto_maximo",
+    "pct_area_alguna_vez_alta",
+    "pct_area_persistente",
+    "correlacion_ndvi_pearson_mediana",
+    "correlacion_ndwi_pearson_mediana",
+    "tendencia_temporal",
+)
+
+# El resumen de persistencia (8.2) vive como GeoTIFF derivado de rasters
+# crudos que no se versionan; estos dos porcentajes por lago se copian tal
+# cual de informe/secciones/08_2_zonas_persistentes.md (generados por
+# notebooks/08_2_zonas_persistentes.ipynb) para que el ejercicio 7 no
+# dependa de reabrir esos raster. Si se re-ejecuta 8.2, actualizar aquí.
+RESUMEN_PERSISTENCIA = {
+    "amatitlan": {"pct_area_alguna_vez_alta": 72.4, "pct_area_persistente": 0.15},
+    "atitlan": {"pct_area_alguna_vez_alta": 0.17, "pct_area_persistente": 0.006},
+}
+
+# Estaciones climáticas de Guatemala (patrón general documentado por el
+# INSIVUMEH): seca noviembre-abril, lluviosa mayo-octubre. Es una
+# simplificación calendario, no una medición meteorológica del laboratorio.
+MESES_ESTACION_SECA = (11, 12, 1, 2, 3, 4)
+MESES_ESTACION_LLUVIOSA = (5, 6, 7, 8, 9, 10)
+
+RUTA_PATRON_ESTACIONAL = DIR_RESULTS_TABLES / "patron_estacional.csv"
+PATRON_ESTACIONAL_FIELDS = (
+    "lago",
+    "estacion",
+    "n_fechas",
+    "cyano_promedio",
+    "cyano_mediana",
+    "cyano_std",
+    "fechas",
+)
+
 
 @dataclass(frozen=True)
 class Lago:
