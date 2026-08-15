@@ -3,11 +3,11 @@
 **CC3084 · Data Science · Universidad del Valle de Guatemala · Semestre II, 2026**
 
 Análisis multitemporal de los lagos Atitlán y Amatitlán con imágenes
-Sentinel-2. Esta etapa implementa los ejercicios 1 a 4: conexión con
-Copernicus Data Space mediante openEO, definición reproducible de las 22
-escenas oficiales, descarga limitada a los AOI y bandas necesarias, el
-cálculo de NDVI, NDWI y el índice de cianobacteria, y el resumen y análisis
-temporal de cianobacteria por lago y fecha.
+Sentinel-2. El repositorio implementa la adquisición de las 22 escenas
+oficiales, los índices de cianobacteria, NDVI y NDWI, el análisis temporal y
+espacial, correlaciones, extensión, persistencia y comparación de
+distribuciones. Todos los productos derivados conservan reglas reproducibles
+de alineación, máscara y control de calidad.
 
 ## Estado de los ejercicios 1 y 2
 
@@ -87,6 +87,20 @@ temporal de cianobacteria por lago y fecha.
   por píxel) y exporta los raster de persistencia en
   `data/processed/analisis_espacial/<lago>/persistencia/`.
 
+## Estado del ejercicio 6 y 8.3
+
+- Los 66 GeoTIFF requeridos están completos y alineados: 22 escenas por los
+  tres índices, en `EPSG:32615` y resolución de 10 m.
+- `src/correlaciones.py` valida las rejillas, calcula Pearson y Spearman por
+  lago-fecha y construye un resumen agrupado con muestreo equilibrado.
+- `notebooks/06_correlaciones.ipynb` conserva la tabla comparativa, las
+  gráficas de coeficientes y cuatro diagramas hexbin.
+- `notebooks/08_3_distribuciones.ipynb` compara fechas elegidas por reglas
+  explícitas, resume percentiles y genera mapas de diferencia
+  `fecha_final - fecha_inicial`.
+- Las tablas están en `results/tables/`, las figuras en `results/figures/` y
+  los mapas de diferencia en `results/maps/`.
+
 ## Estructura
 
 ```text
@@ -106,18 +120,21 @@ temporal de cianobacteria por lago y fecha.
 │   ├── 03_indices.ipynb
 │   ├── 04_analisis_temporal.ipynb
 │   ├── 05_analisis_espacial.ipynb
+│   ├── 06_correlaciones.ipynb
 │   ├── 08_1_extension_floracion.ipynb
-│   └── 08_2_zonas_persistentes.ipynb
+│   ├── 08_2_zonas_persistentes.ipynb
+│   └── 08_3_distribuciones.ipynb
 ├── results/
-│   ├── maps/                        # mapas individuales, comparativos, de persistencia e interactivos
-│   ├── figures/                     # series temporales (extensión de floración)
-│   └── tables/                      # extension_floracion.csv, metadata_mapas.csv
+│   ├── maps/                        # mapas espaciales, persistencia y diferencias temporales
+│   ├── figures/                     # series, correlaciones y distribuciones
+│   └── tables/                      # resúmenes espaciales, correlaciones y distribuciones
 ├── src/
 │   ├── config.py                    # coordenadas, fechas, script de cianobacteria y config común
 │   ├── adquisicion.py               # preparación, consulta y descarga openEO
 │   ├── indices.py                   # NDVI, NDWI, cianobacteria y manifest_indices.csv
 │   ├── analisis_temporal.py         # resumen_temporal.csv, picos y validación del manifiesto de índices
 │   ├── analisis_espacial.py         # contorno real, mapas, extensión de floración y persistencia
+│   ├── correlaciones.py             # correlaciones, distribuciones y mapas de diferencia
 │   ├── evalscripts/                 # script de cianobacteria (original y adaptación numérica)
 │   ├── raster_utils.py              # validación local de GeoTIFF
 │   └── run_pipeline.py              # preparación segura de esta etapa
@@ -227,6 +244,9 @@ NDVI/NDWI localmente. Para pedir el índice de cianobacteria a la Process API
 se necesita un OAuth client de Copernicus Data Space (Dashboard > User
 Settings > OAuth clients) y sus valores en `.env` como
 `SENTINEL_HUB_CLIENT_ID` / `SENTINEL_HUB_CLIENT_SECRET`.
+El proyecto carga automáticamente el archivo local `.env` mediante
+`python-dotenv`; las variables exportadas explícitamente en la terminal tienen
+prioridad y no son sobrescritas.
 
 ### 1. Preparar y validar el manifiesto de índices
 
@@ -372,6 +392,36 @@ cuadernos 8.1 y 8.2 leen directamente los productos ya calculados por el
 ejercicio 3 y por el propio ejercicio 5 (contorno real cacheado); no
 descargan ni recalculan índices.
 
+## Flujo reproducible del ejercicio 6 y 8.3
+
+Estos análisis trabajan sin conexión una vez que existen los 66 GeoTIFF
+alineados de cianobacteria, NDVI y NDWI (22 fechas por 3 índices). Primero se
+puede comprobar el insumo sin generar resultados:
+
+```powershell
+python src/correlaciones.py validate
+```
+
+Para calcular las correlaciones, las distribuciones y todas sus figuras:
+
+```powershell
+python src/correlaciones.py all
+```
+
+El ejercicio 6 calcula Pearson y Spearman por lago, fecha e índice usando
+solamente pares de píxeles válidos simultáneamente dentro de la geometría real
+del lago. El resumen agrupado equilibra las fechas con un máximo común de
+pares, para evitar que una escena con más píxeles domine el resultado.
+
+El ejercicio 8.3 selecciona las fechas mediante reglas reproducibles
+(referencia, pico temporal, mayor extensión y fecha común), compara sus
+distribuciones con límites gráficos comunes y genera mapas de diferencia con
+la convención `fecha_final - fecha_inicial`. No modifica los raster de entrada.
+
+Los productos quedan en `results/tables/`, `results/figures/` y
+`results/maps/`. La metodología y el diccionario de cada tabla están en
+`codebook.md`.
+
 ## Uso de los notebooks
 
 Abrir Jupyter desde la raíz:
@@ -381,8 +431,10 @@ jupyter notebook notebooks/01_02_conexion_y_descarga.ipynb
 jupyter notebook notebooks/03_indices.ipynb
 jupyter notebook notebooks/04_analisis_temporal.ipynb
 jupyter notebook notebooks/05_analisis_espacial.ipynb
+jupyter notebook notebooks/06_correlaciones.ipynb
 jupyter notebook notebooks/08_1_extension_floracion.ipynb
 jupyter notebook notebooks/08_2_zonas_persistentes.ipynb
+jupyter notebook notebooks/08_3_distribuciones.ipynb
 ```
 
 Los notebooks se pueden ejecutar de arriba a abajo sin conexión ni
@@ -396,7 +448,9 @@ siempre apuntan a una sola escena; el lote de 22 escenas se confirma
 aparte. El cuaderno 04 no tiene banderas remotas: valida el manifiesto de
 índices y grafica lo que ya esté calculado; si todavía no hay ninguna
 escena lista, lo reporta en vez de fallar. Los cuadernos 8.1 y 8.2 tampoco
-requieren red: leen directamente los productos ya calculados.
+requieren red: leen directamente los productos ya calculados. Los cuadernos
+06 y 8.3 tampoco usan credenciales ni red: validan y documentan los resultados
+calculados a partir de los 66 GeoTIFF locales.
 
 ## Geometría real de los lagos
 

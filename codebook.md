@@ -489,3 +489,89 @@ un hallazgo descriptivo, no una prueba de causa ambiental; la
 interpretación completa que cruza persistencia, distribuciones y
 correlaciones corresponde al análisis conjunto de los dos lagos.
 
+## Ejercicio 6 - correlaciones con NDVI y NDWI
+
+### Regla de emparejamiento
+
+`src/correlaciones.py` exige que cianobacteria, NDVI y NDWI compartan CRS,
+transformación, ancho y alto en cada lago-fecha. Los coeficientes se calculan
+con los píxeles que pasan simultáneamente la geometría real del lago, la
+máscara SCL-agua heredada del procesamiento y la condición `isfinite` de los
+dos valores comparados. No se rellenan ausencias con cero.
+
+Pearson resume asociación lineal y Spearman asociación monótona por rangos.
+Se reportan ambos por fecha. Para el valor agrupado se extrae una muestra
+determinística y equilibrada de hasta 10 000 pares por fecha, evitando que una
+escena con mayor cobertura domine el resultado. Los valores p son
+exploratorios porque la autocorrelación espacial viola la independencia ideal
+entre píxeles vecinos.
+
+### `results/tables/correlaciones_por_fecha.csv`
+
+Una fila por combinación lago-fecha-índice-método (88 filas).
+
+| Variable | Descripción |
+|---|---|
+| `lago`, `fecha` | Escena analizada |
+| `indice` | `ndvi` o `ndwi` |
+| `metodo` | `pearson` o `spearman` |
+| `coeficiente` | Coeficiente entre -1 y 1 |
+| `p_value` | Significancia exploratoria; `<1e-300` indica subdesbordamiento numérico |
+| `n_pares` | Píxeles válidos simultáneamente |
+| `direccion`, `magnitud` | Etiquetas interpretativas derivadas del signo y valor absoluto |
+| `quality_flag_cianobacteria`, `quality_flag_indice` | Advertencias heredadas del manifiesto |
+| `nota_inferencia` | Recordatorio sobre autocorrelación espacial |
+
+### `results/tables/correlaciones_por_lago.csv`
+
+Una fila por lago-índice-método (8 filas). Incluye `n_fechas`, total de pares,
+media, mediana, mínimo y máximo de los coeficientes por fecha, fracción de
+fechas positivas y el coeficiente agrupado estratificado con su tamaño de
+muestra. La mediana por fecha es la referencia principal; el valor agrupado es
+un contraste y no debe interpretarse aislado.
+
+### Resultado descriptivo
+
+Amatitlán presenta una relación cianobacteria-NDVI predominantemente positiva
+(medianas por fecha: Pearson 0.67 y Spearman 0.63) y una relación con NDWI
+predominantemente negativa (-0.59 y -0.51). Atitlán tiene medianas por fecha
+débiles para NDVI (0.03 y 0.13) y NDWI (aproximadamente 0.00 y -0.07). El
+Spearman agrupado de NDWI en Atitlán (-0.53) difiere de la evidencia por fecha,
+por lo que se conserva como ejemplo de que mezclar fechas puede cambiar la
+interpretación.
+
+## Ejercicio 8.3 - distribuciones y mapas de diferencia
+
+### Selección de fechas
+
+Las fechas se etiquetan antes de graficar con cuatro criterios reproducibles:
+`referencia_primera_fecha_completa`, `pico_temporal`, `mayor_extension` y
+`fecha_comun_lagos` (`2026-04-13`). Una fecha puede satisfacer más de un
+criterio. Las distribuciones usan la misma máscara común de geometría, agua y
+validez de los tres índices.
+
+### `results/tables/distribuciones_por_fecha.csv`
+
+Una fila por lago-fecha (22 filas).
+
+| Variable | Descripción |
+|---|---|
+| `lago`, `fecha` | Escena analizada |
+| `n_pixeles` | Número de píxeles válidos incluidos |
+| `min`, `max` | Extremos conservados en la tabla |
+| `p01`, `p05`, `q25`, `mediana`, `q75`, `p95`, `p99` | Percentiles de la distribución |
+| `media`, `desviacion_std` | Media y desviación estándar poblacional |
+| `quality_flag` | Estado heredado del manifiesto de cianobacteria |
+| `criterio_seleccion` | Uno o más criterios usados para elegir la fecha en las figuras |
+
+Los histogramas y boxplots usan límites comunes basados en percentiles solo
+para mantener legibilidad; los CSV conservan todos los valores válidos. Los
+mapas de diferencia verifican rejilla exacta, calculan
+`fecha_final - fecha_inicial` y emplean una escala divergente centrada en cero.
+
+Amatitlán aumenta su mediana de 4.49 µg/L en la referencia a 10.73 µg/L en la
+fecha de mayor extensión; su percentil 95 llega a 21.34 µg/L. Atitlán mantiene
+medianas menores y su fecha final seleccionada (`2026-07-22`) conserva la
+bandera `revisar_valores_atipicos`, por lo que la diferencia se interpreta con
+cautela.
+

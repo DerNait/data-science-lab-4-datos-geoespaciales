@@ -1,0 +1,9 @@
+lago,indice,metodo,n_fechas,n_pares_total,coeficiente_medio_fechas,coeficiente_mediano_fechas,coeficiente_minimo_fecha,coeficiente_maximo_fecha,fraccion_fechas_positivas,coeficiente_agrupado_estratificado,p_value_agrupado,n_pares_agrupado,magnitud_agrupada,nota_inferencia
+amatitlan,ndvi,pearson,11,1537777,0.53777471,0.66681644,-0.04613289,0.91244519,0.9091,0.23687961,<1e-300,110000,debil,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial
+amatitlan,ndvi,spearman,11,1537777,0.58652103,0.63296409,-0.05890522,0.91446284,0.9091,0.60896533,<1e-300,110000,fuerte,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial
+amatitlan,ndwi,pearson,11,1537783,-0.43866198,-0.59185743,-0.88683772,0.11425238,0.2727,-0.34995013,<1e-300,110000,moderada,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial
+amatitlan,ndwi,spearman,11,1537783,-0.45738798,-0.50557361,-0.89617576,0.18204947,0.2727,-0.37427705,<1e-300,110000,moderada,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial
+atitlan,ndvi,pearson,11,13309707,0.02332908,0.02816262,-0.03332344,0.10093752,0.8182,-0.01955772,8.7499043e-11,110000,muy_debil,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial
+atitlan,ndvi,spearman,11,13309707,0.11515322,0.12731947,-0.05933345,0.23361909,0.9091,-0.06765559,9.2748209e-112,110000,muy_debil,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial
+atitlan,ndwi,pearson,11,13338484,-0.11714376,-4.909e-05,-0.39958814,0.06133223,0.4545,-0.06148041,1.3678327e-92,110000,muy_debil,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial
+atitlan,ndwi,spearman,11,13338484,-0.15407561,-0.06903121,-0.57753119,0.23538928,0.4545,-0.53488695,<1e-300,110000,fuerte,muestra_equilibrada_por_fecha; p_value_exploratorio_por_autocorrelacion_espacial

@@ -5,8 +5,13 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 RAIZ = Path(__file__).resolve().parent.parent
+
+load_dotenv(RAIZ / ".env", override=False)
+
 DIR_DATA = RAIZ / "data"
 DIR_RAW = DIR_DATA / "raw"
 DIR_GEOJSON = DIR_RAW / "geojson"
@@ -187,6 +192,17 @@ EXTENSION_FLORACION_FIELDS = (
     "cobertura_valida_pct",
     "quality_flag",
 )
+
+# --- Ejercicios 6 / 8.3: correlaciones y distribuciones ------------------
+
+RUTA_CORRELACIONES_FECHA = DIR_RESULTS_TABLES / "correlaciones_por_fecha.csv"
+RUTA_CORRELACIONES_LAGO = DIR_RESULTS_TABLES / "correlaciones_por_lago.csv"
+RUTA_DISTRIBUCIONES = DIR_RESULTS_TABLES / "distribuciones_por_fecha.csv"
+
+FECHA_COMUN_LAGOS = "2026-04-13"
+
+MAX_PARES_POR_FECHA_AGRUPADA = 10_000
+MAX_PARES_POR_FECHA_FIGURA = 5_000
 
 RUTA_METADATA_MAPAS = DIR_RESULTS_TABLES / "metadata_mapas.csv"
 METADATA_MAPAS_FIELDS = (
