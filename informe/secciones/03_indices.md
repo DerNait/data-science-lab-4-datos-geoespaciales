@@ -91,11 +91,12 @@ proporción del área) y luego se realineó a la misma rejilla de 10 metros
 que el resto de los productos, así que el archivo final entregado no
 cambia de resolución; solo cambió el insumo intermedio.
 
-## Limitación pendiente
+## Nota sobre el contorno del lago
 
-El laboratorio menciona que se entregaría el contorno exacto del agua de
-cada lago (un polígono geográfico oficial). Ese archivo no ha llegado
-todavía, así que mientras tanto se usa una clasificación automática de "qué
-píxel es agua" que hace el propio satélite en cada imagen. Es una solución
-razonable y ya validada, pero en cuanto se obtenga el contorno oficial del
-lago debe usarse para afinar los resultados, sobre todo en las orillas.
+En esta etapa (ejercicio 3) los promedios usan una clasificación automática
+de "qué píxel es agua" que hace el propio satélite en cada imagen, porque
+todavía no se contaba con el contorno exacto del lago. Es una solución
+razonable y ya validada. El ejercicio 5 obtuvo después el contorno real de
+ambos lagos (de OpenStreetMap) y lo combina con esta misma clasificación
+para afinar los resultados en las orillas; ver esa sección para el
+detalle.
