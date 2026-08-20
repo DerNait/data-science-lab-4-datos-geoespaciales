@@ -15,6 +15,15 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 import numpy as np
+import pyarrow.fs as _pyarrow_fs
+
+# Se crea antes de que rasterio abra ningún archivo: en este entorno, GDAL
+# registra su propio filesystem "file" la primera vez que abre un raster, y
+# si pyarrow intenta crear el suyo después, choca con
+# "ArrowKeyError: Attempted to register factory for scheme 'file'...".
+# Crear e reutilizar este objeto evita que to_parquet dispare ese segundo
+# registro.
+_PARQUET_FILESYSTEM = _pyarrow_fs.LocalFileSystem()
 
 try:  # Permite `python src/dataset_ml.py` y `python -m src.dataset_ml`.
     from .analisis_espacial import lake_geometry_mask
@@ -397,7 +406,7 @@ def escribir_dataset(tabla, path: Path | None = None) -> Path:
     path = RUTA_DATASET_ML if path is None else path
     path.parent.mkdir(parents=True, exist_ok=True)
     temporal = path.with_suffix(path.suffix + ".tmp")
-    tabla.to_parquet(temporal, index=False)
+    tabla.to_parquet(temporal, index=False, filesystem=_PARQUET_FILESYSTEM)
     temporal.replace(path)
     return path
 
@@ -410,7 +419,7 @@ def leer_dataset(path: Path | None = None):
         raise DatasetMLError(
             f"No existe {path}. Ejecute primero `python src/dataset_ml.py construir`."
         )
-    return pd.read_parquet(path)
+    return pd.read_parquet(path, filesystem=_PARQUET_FILESYSTEM)
 
 
 def construir_inventario(tabla) -> list[dict[str, object]]:
