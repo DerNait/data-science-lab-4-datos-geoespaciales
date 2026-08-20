@@ -398,15 +398,22 @@ lagos, persistencia o interactivo).
 
 ### Umbral de "valor alto"
 
-`UMBRAL_CIANOBACTERIA_ALTO_UGL = 10.0` (`src/config.py`): corresponde al
-**"Alert Level 1"** de la Organización Mundial de la Salud, *Guidelines
-for Safe Recreational Water Environments*, Volumen 1, Capítulo 8 (2003):
-10 µg/L de clorofila-a asociada a dominancia de cianobacterias. Es un
-umbral de salud pública **externo a este conjunto de datos**, fijado antes
-de calcular qué porcentaje de cada lago queda por encima, precisamente
-para no elegirlo según qué tan llamativo se vea el resultado. Se aplica
-únicamente a píxeles que pasan la máscara combinada (geometría real ∩
-SCL-agua) de la escena correspondiente.
+`UMBRAL_CIANOBACTERIA_ALTO_UGL = 10.0` (`src/config.py`) es un umbral de
+salud pública **externo a este conjunto de datos**, fijado antes de
+calcular qué porcentaje de cada lago queda por encima, para no elegirlo
+según qué tan llamativo se vea el resultado. Se aplica únicamente a
+píxeles que pasan la máscara combinada (geometría real ∩ SCL-agua) de la
+escena correspondiente, y en la Parte II es también el corte de la
+variable respuesta binaria `cyano_alta` (ver más abajo, "Ejercicio 2").
+
+**Nota de precisión (corregida respecto a una versión anterior de este
+codebook):** este umbral no corresponde exactamente al "Alert Level 1" de
+la OMS como se afirmaba antes. Verificando la tabla original: 10 µg/L cae
+en el extremo superior del **nivel de vigilancia** de la OMS (~1-12 µg/L),
+justo antes de entrar a Alert Level 1 (~12-24 µg/L). Sí corresponde con
+precisión al rango **eutrófico** (8-25 µg/L) de la clasificación trófica
+de la OECD (1982). Ver "Ejercicio 2 - justificación del punto de corte"
+para las referencias completas y verificadas.
 
 ### Área de píxel
 
@@ -631,3 +638,91 @@ ejercicio 4. Atitlán no muestra diferencia relevante entre estaciones (1.14 vs.
 1.18 µg/L). Con 11 fechas irregulares por lago no corresponde afirmar una
 estacionalidad robusta, solo describir estos indicios.
 
+
+# Parte II - Machine Learning
+
+## Ejercicio 1 - conjunto de datos tabular (`data/processed/ml/dataset_ml.parquet`)
+
+No versionado (regenerable con `python src/dataset_ml.py construir`). Una fila
+por celda agregada de 50 m (bloques de 5x5 píxeles de 10 m) dentro del
+contorno real de un lago, en una fecha oficial.
+
+| Variable | Tipo | Descripción |
+|---|---|---|
+| `lago`, `fecha` | texto | Identifican la escena de origen |
+| `x_utm`, `y_utm` | decimal | Centroide de la celda en `EPSG:32615` (metros) |
+| `lon`, `lat` | decimal | Mismo centroide reproyectado a `EPSG:4326` |
+| `B03`, `B04`, `B08` | decimal | Reflectancia de superficie (0-1), promedio de la celda |
+| `ndvi`, `ndwi` | decimal | Promedio de la celda |
+| `cianobacteria_ugl` | decimal | Promedio de la celda (µg/L, proxy) |
+| `n_pixeles_validos` | entero | 0-25, píxeles de 10 m válidos dentro de la celda |
+| `frac_valida` | decimal | `n_pixeles_validos / 25` |
+
+Una celda se conserva solo si `n_pixeles_validos >= 13` (mayoría estricta).
+Se descartan a nivel de píxel de 10 m, antes de agregar: puntos fuera del
+contorno real del lago, `nodata`, nubes/sombras/nieve (SCL), y valores de
+NDVI/NDWI/cianobacteria fuera de su rango físicamente interpretable
+(`[-1,1]` para los índices normalizados, `[0,500]` para cianobacteria).
+`results/tables/inventario_dataset_ml.csv` (versionado) documenta el total
+de observaciones, el desglose por lago y fecha, y el tipo y porcentaje de
+faltantes de cada variable.
+
+## Ejercicio 2 - variable respuesta (`src/respuesta.py`)
+
+### Binarización
+
+`cyano_alta = 1` si `cianobacteria_ugl >= UMBRAL_CIANOBACTERIA_ALTO_UGL`
+(10.0 µg/L), si no `0`. Mismo umbral que el ejercicio 8.1/8.2 de la Parte I.
+
+### Justificación del punto de corte (verificada)
+
+- **OECD (1982).** *Eutrophication of waters: Monitoring, assessment and
+  control*. OECD. Clasificación trófica por clorofila-a media anual:
+  oligotrófico ≤2.5 µg/L, mesotrófico 2.5-8, **eutrófico 8-25**,
+  hipereutrófico ≥25. 10 µg/L cae dentro del rango eutrófico.
+- **World Health Organization. (2003).** *Guidelines for safe recreational
+  water environments: Volume 1, Coastal and fresh waters*.
+  https://www.who.int/publications/i/item/9241545801. Marco de niveles de
+  alerta para cianobacterias por clorofila-a con dominancia de
+  cianobacterias: nivel de vigilancia ~1-12 µg/L, Alert Level 1 ~12-24
+  µg/L. 10 µg/L cae en el extremo superior del nivel de vigilancia, justo
+  antes de Alert Level 1 (no "es" Alert Level 1, una imprecisión que tenía
+  una versión anterior de este documento).
+
+### `results/tables/distribucion_respuesta.csv`
+
+Una fila por combinación de corte/lago-o-fecha/clase. Columnas: `corte`
+(`global`, `por_lago`, `por_fecha`), `lago`, `fecha`, `cyano_alta` (0 o 1),
+`n`, `pct`.
+
+### Desbalance de clases (números reales del dataset)
+
+| Corte | n_total | n_positivos | % positivos | negativos por positivo |
+|---|---:|---:|---:|---:|
+| Global | 492677 | 6365 | 1.29 % | 76.4 |
+| Amatitlán | 60642 | 6358 | 10.48 % | 8.5 |
+| Atitlán | 432035 | 7 | 0.0016 % | 61718 |
+
+El 99.9 % de las observaciones positivas del dataset completo vienen de
+Amatitlán. Consecuencias: accuracy global es engañosa (predecir siempre 0
+da ~98.7 % de accuracy sin aprender nada); los modelos sin ajuste tienden a
+sesgarse hacia la clase mayoritaria; deben usarse Precision/Recall/F1/
+ROC-AUC en vez de accuracy; y un modelo entrenado solo con datos de Atitlán
+casi no tiene positivos de los que aprender, lo que anticipa dificultad en
+el ejercicio 7 (generalización entre lagos) del experimento "entrenar en
+Atitlán, evaluar en Amatitlán".
+
+### `VARIABLES_EXCLUIDAS_RESPUESTA` (`src/config.py`) - fuga de datos
+
+El script CyanoLakes calcula `NDCI = (B05-B04)/(B05+B04)` y `chl` a partir
+de ese NDCI; `B05` no se descargó, así que la fuga entra por `B04`.
+
+| Variable | Razón de exclusión |
+|---|---|
+| `cianobacteria_ugl` | Es la variable de la que se deriva `cyano_alta` |
+| `B04` | Entra directamente en el NDCI que calcula la clorofila-a |
+| `ndvi` | `(B08-B04)/(B08+B04)`: usa B04, fuga indirecta |
+
+`B03` y `B08` sí pueden usarse como predictoras: en el script de
+cianobacteria solo intervienen en la máscara de agua, no en el valor
+numérico de `chl`.
