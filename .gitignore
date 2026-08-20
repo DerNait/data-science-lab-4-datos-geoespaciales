@@ -22,6 +22,8 @@ data/processed/indices/*
 !data/processed/indices/.gitkeep
 data/processed/analisis_espacial/*
 !data/processed/analisis_espacial/.gitkeep
+data/processed/ml/*
+!data/processed/ml/.gitkeep
 
 # Archivos temporales de descargas y ejecución
 data/tmp/

@@ -10,4 +10,4 @@ shapely==2.1.2
 folium==0.20.0
 python-dotenv==1.2.2
 scipy==1.18.0
-
+pyarrow==25.0.1
