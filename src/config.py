@@ -169,13 +169,28 @@ OSM_LAKE_NAME_CANDIDATES = {
     "amatitlan": ("Lago de Amatitlán", "Lake Amatitlán"),
 }
 
-# Umbral de "valor alto" de cianobacteria para los ejercicios 8.1 y 8.2:
-# "Alert Level 1" de WHO (2003), "Guidelines for Safe Recreational Water
-# Environments", Volumen 1, Capítulo 8 (10 µg/L de clorofila-a asociada a
-# dominancia de cianobacterias). Es un umbral de salud pública externo al
-# dataset, fijado antes de calcular qué porcentaje del lago queda por
-# encima, para no elegirlo según qué tan llamativo se vea el resultado.
+# Umbral de "valor alto" de cianobacteria para los ejercicios 8.1/8.2 de la
+# Parte I y para la variable respuesta binaria de la Parte II (cyano_alta).
+# 10 µg/L de clorofila-a cae dentro del rango "eutrófico" (8-25 µg/L) de la
+# clasificación trófica de la OECD (1982) y en el extremo superior del nivel
+# de vigilancia de la OMS (2003) para cianobacterias en agua recreativa
+# (Vigilance level ~1-12 µg/L; el siguiente nivel, Alert Level 1, empieza
+# ~12 µg/L). Ver codebook.md para el detalle y las referencias completas.
+# Es un umbral de salud pública externo al dataset, fijado antes de calcular
+# qué porcentaje del lago queda por encima, para no elegirlo según qué tan
+# llamativo se vea el resultado.
 UMBRAL_CIANOBACTERIA_ALTO_UGL = 10.0
+
+# Ejercicio 2.5 de la Parte II: variables que no pueden usarse como
+# predictoras porque intervienen directa o indirectamente en el cálculo de
+# cianobacteria_ugl (la fuente de cyano_alta). El script CyanoLakes calcula
+# NDCI = (B05-B04)/(B05+B04) y luego chl a partir de ese NDCI; B05 no se
+# descargó, así que la fuga entra por B04. Ver codebook.md, ejercicio 3.
+VARIABLES_EXCLUIDAS_RESPUESTA = {
+    "cianobacteria_ugl": "es la variable de la que se deriva cyano_alta",
+    "B04": "entra directamente en el NDCI que calcula la clorofila-a de CyanoLakes",
+    "ndvi": "se calcula como (B08-B04)/(B08+B04): usa B04, fuga indirecta",
+}
 
 RUTA_EXTENSION_FLORACION = DIR_RESULTS_TABLES / "extension_floracion.csv"
 EXTENSION_FLORACION_FIELDS = (
