@@ -1,0 +1,4 @@
+modelo,n_prueba,positivos_prueba,accuracy,precision,recall,f1,f2,roc_auc,pr_auc,verdaderos_negativos,falsos_positivos,falsos_negativos,verdaderos_positivos
+regresion_logistica,147799,1910,0.972334,0.31649,0.98377,0.478909,0.691979,0.996944,0.824138,141831,4058,31,1879
+random_forest,147799,1910,0.997219,0.838987,0.971204,0.900267,0.941529,0.999702,0.9794,145533,356,55,1855
+gradient_boosting,147799,1910,0.998261,0.898313,0.975916,0.935508,0.959341,0.99983,0.987989,145678,211,46,1864
