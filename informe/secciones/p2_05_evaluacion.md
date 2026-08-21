@@ -39,9 +39,12 @@ en el sistema de alerta, pero no genera exposición de nadie.
 Un **falso negativo** es no detectar una zona que sí tiene alta presencia. Su
 costo es de salud pública: una floración capaz de producir cianotoxinas queda sin
 alerta, y esa agua se usa para recreación, pesca, riego y abastecimiento. El
-umbral de 10 microgramos por litro que define la variable respuesta es
-precisamente el Alert Level 1 de la OMS, el nivel a partir del cual se recomienda
-vigilancia activa e información al público.
+umbral de 10 microgramos por litro que define la variable respuesta cae en el
+extremo superior del nivel de vigilancia de la OMS (aproximadamente 1 a 12
+microgramos por litro), justo antes de Alert Level 1 (aproximadamente 12 a 24), y
+coincide con el rango eutrófico de la clasificación trófica de la OECD (1982). Es,
+de cualquier forma, un umbral de salud pública pensado para activar vigilancia
+antes de que la situación empeore, no un punto arbitrario.
 
 Los dos errores no son simétricos. En un sistema de monitoreo de riesgo
 sanitario, el costo de no advertir supera al de advertir de más. **El error que
