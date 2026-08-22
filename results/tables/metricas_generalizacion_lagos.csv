@@ -1,7 +1,7 @@
 experimento,lago_entrenamiento,lago_prueba,positivos_entrenamiento,modelo,n_prueba,positivos_prueba,accuracy,precision,recall,f1,f2,roc_auc,pr_auc,verdaderos_negativos,falsos_positivos,falsos_negativos,verdaderos_positivos
-atitlan_a_amatitlan,atitlan,amatitlan,7,regresion_logistica,60642,6358,0.895155,0.0,0.0,0.0,0.0,0.859361,0.416298,54284,0,6358,0
-amatitlan_a_atitlan,amatitlan,atitlan,6358,regresion_logistica,432021,7,0.759653,6.7e-05,1.0,0.000135,0.000337,0.917002,0.00136,328179,103835,0,7
+atitlan_a_amatitlan,atitlan,amatitlan,7,regresion_logistica,60642,6358,0.895155,0.0,0.0,0.0,0.0,0.859366,0.416337,54284,0,6358,0
+amatitlan_a_atitlan,amatitlan,atitlan,6358,regresion_logistica,432021,7,0.759655,6.7e-05,1.0,0.000135,0.000337,0.916991,0.00136,328180,103834,0,7
 atitlan_a_amatitlan,atitlan,amatitlan,7,random_forest,60642,6358,0.895155,0.0,0.0,0.0,0.0,0.600807,0.276804,54284,0,6358,0
-amatitlan_a_atitlan,amatitlan,atitlan,6358,random_forest,432021,7,0.925302,0.000217,1.0,0.000434,0.001083,0.970678,0.000294,399743,32271,0,7
-atitlan_a_amatitlan,atitlan,amatitlan,7,gradient_boosting,60642,6358,0.895155,0.0,0.0,0.0,0.0,0.841357,0.48936,54284,0,6358,0
-amatitlan_a_atitlan,amatitlan,atitlan,6358,gradient_boosting,432021,7,0.97405,0.000624,1.0,0.001247,0.003112,0.987484,0.000694,420803,11211,0,7
+amatitlan_a_atitlan,amatitlan,atitlan,6358,random_forest,432021,7,0.925522,0.000218,1.0,0.000435,0.001087,0.971695,0.000304,399838,32176,0,7
+atitlan_a_amatitlan,atitlan,amatitlan,7,gradient_boosting,60642,6358,0.895155,0.0,0.0,0.0,0.0,0.830666,0.415884,54284,0,6358,0
+amatitlan_a_atitlan,amatitlan,atitlan,6358,gradient_boosting,432021,7,0.972832,0.000596,1.0,0.001191,0.002973,0.985859,0.000607,420277,11737,0,7
