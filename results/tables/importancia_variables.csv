@@ -1,0 +1,18 @@
+modelo,variable,importancia_modelo,importancia_modelo_normalizada,shap_media_absoluta,shap_media_absoluta_normalizada,correlacion_valor_shap,direccion_efecto,n_muestra_shap
+gradient_boosting,B03,0.0233346,0.0233346,3.13101323,0.2089512,0.033954,efecto no monotono o debil,5000
+gradient_boosting,lago_amatitlan,0.55380559,0.55380553,2.10015318,0.14015575,0.569267,valores altos aumentan la prediccion,5000
+gradient_boosting,y_utm,0.00080132,0.00080132,1.81441644,0.12108684,-0.329,valores altos disminuyen la prediccion,5000
+gradient_boosting,B08,0.00208032,0.00208032,1.6498639,0.11010526,0.896866,valores altos aumentan la prediccion,5000
+gradient_boosting,x_utm,0.00090284,0.00090284,1.27979831,0.08540858,0.444585,valores altos aumentan la prediccion,5000
+gradient_boosting,ndwi_vecindad_3x3,0.00098211,0.00098211,1.14405052,0.07634932,-0.62975,valores altos disminuyen la prediccion,5000
+gradient_boosting,dist_orilla_m,0.00026521,0.00026521,0.78471381,0.05236864,-0.706304,valores altos disminuyen la prediccion,5000
+gradient_boosting,dia_anio_cos,0.00383779,0.00383779,0.60142189,0.04013647,-0.758066,valores altos disminuyen la prediccion,5000
+gradient_boosting,ndwi,0.00101471,0.00101471,0.46883651,0.03128826,-0.690132,valores altos disminuyen la prediccion,5000
+gradient_boosting,dist_centroide_m,0.00042965,0.00042965,0.46113393,0.03077422,0.489758,valores altos aumentan la prediccion,5000
+gradient_boosting,dia_anio_sin,0.00390952,0.00390952,0.38415206,0.02563676,-0.777696,valores altos disminuyen la prediccion,5000
+gradient_boosting,lago_atitlan,0.36952928,0.36952924,0.36783222,0.02454764,-0.569267,valores altos disminuyen la prediccion,5000
+gradient_boosting,ratio_B03_B08,0.00065795,0.00065795,0.36376872,0.02427646,-0.229166,valores altos disminuyen la prediccion,5000
+gradient_boosting,mes,0.00259583,0.00259583,0.26120122,0.01743152,0.84928,valores altos aumentan la prediccion,5000
+gradient_boosting,estacion_lluviosa,0.00571044,0.00571044,0.07723331,0.00515424,0.776163,valores altos aumentan la prediccion,5000
+gradient_boosting,frac_valida,0.00014414,0.00014414,0.07157255,0.00477646,0.679952,valores altos aumentan la prediccion,5000
+gradient_boosting,estacion_seca,0.0299988,0.0299988,0.02326167,0.00155239,-0.769666,valores altos disminuyen la prediccion,5000
