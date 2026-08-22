@@ -107,12 +107,11 @@ METRICAS_GENERALIZACION_FIELDS = (
 N_PLIEGUES_ESPACIAL = 5
 
 # Decision tomada evaluando ambos tamanos con `evaluar_tamanos_bloque`
-# (ver notebook 14 y results/tables/bloques_espaciales.csv): a 1 km,
-# Amatitlan da 35 bloques, un margen estrecho para repartir en varios
-# pliegues de GroupKFold aunque los 35 ya tengan algun positivo cada uno.
-# A 500 m da del orden de 140, sin perder cobertura de positivos. Atitlan
-# se deja en 1 km: su problema no es el tamano del bloque, es que solo 3 de
-# sus 164 bloques concentran sus 7 positivos totales, algo que refinar la
+# (ver notebook 14): a 1 km, Amatitlan da 35 bloques, 34 con algun
+# positivo, un margen estrecho para repartir en varios pliegues de
+# GroupKFold. A 500 m da 95 bloques, 90 con algun positivo. Atitlan se deja
+# en 1 km: su problema no es el tamano del bloque, sino que solo 3 de sus
+# 168 bloques concentran sus 7 positivos totales, algo que refinar la
 # cuadricula no arregla porque la escasez es absoluta, no de resolucion.
 TAMANO_BLOQUE_M = {"amatitlan": 500.0, "atitlan": 1000.0}
 

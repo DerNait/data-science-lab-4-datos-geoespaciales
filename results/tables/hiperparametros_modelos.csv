@@ -1,15 +1,15 @@
 modelo,hiperparametro,valores_evaluados,valor_elegido
 regresion_logistica,modelo__C,"[0.01, 0.1, 1.0, 10.0]",10.0
 regresion_logistica,modelo__solver,"[""lbfgs"", ""liblinear""]","""lbfgs"""
-regresion_logistica,f2_validacion_cruzada,,0.695988
+regresion_logistica,f2_validacion_cruzada,,0.695609
 random_forest,max_depth,"[null, 12, 20]",20
 random_forest,max_features,"[""sqrt"", 0.5]","""sqrt"""
 random_forest,min_samples_leaf,"[1, 5, 20]",5
 random_forest,n_estimators,"[200, 400]",200
-random_forest,f2_validacion_cruzada,,0.941245
+random_forest,f2_validacion_cruzada,,0.941993
 gradient_boosting,colsample_bytree,"[0.8, 1.0]",0.8
 gradient_boosting,learning_rate,"[0.03, 0.1, 0.3]",0.1
 gradient_boosting,max_depth,"[3, 6, 9]",9
 gradient_boosting,n_estimators,"[200, 400, 600]",200
 gradient_boosting,subsample,"[0.8, 1.0]",0.8
-gradient_boosting,f2_validacion_cruzada,,0.954670
+gradient_boosting,f2_validacion_cruzada,,0.955028

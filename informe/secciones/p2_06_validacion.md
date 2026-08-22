@@ -12,9 +12,11 @@ tener observaciones casi idénticas a las de entrenamiento.
 ## Cuadrícula de bloques espaciales
 
 Antes de fijar un tamaño de bloque se comprobó si un kilómetro alcanzaba.
-Con esa medida, Amatitlán queda en 95 bloques y Atitlán en 168. La
-diferencia entre lagos no es casualidad: son 60,642 observaciones contra
-432,035, así que el mismo tamaño de bloque produce una malla mucho más
+Con esa medida, Amatitlán queda en 35 bloques, 34 de ellos con algún
+positivo y una mediana de 1,123 observaciones por bloque; Atitlán queda en
+168 bloques, 3 con algún positivo y una mediana de 3,378 observaciones por
+bloque. La diferencia entre lagos no es casualidad: son 60,642 observaciones
+contra 432,035, así que el mismo tamaño de bloque produce una malla mucho más
 fina, en número de observaciones por bloque, sobre el lago más grande.
 
 | Lago | Tamaño de bloque | Bloques totales | Bloques con algún positivo | Obs. por bloque (mediana) |
@@ -23,7 +25,7 @@ fina, en número de observaciones por bloque, sobre el lago más grande.
 | Atitlán | 1000 m | 168 | 3 | 3,378 |
 
 Para Amatitlán se evaluó también la cuadrícula de 1 km del enunciado, y se
-prefirió 500 m: con 1 km el número de bloques queda más estrecho para
+prefirió 500 m: con 1 km los 35 bloques dejan un margen más estrecho para
 repartir en varios pliegues de validación cruzada agrupada, y a 500 m casi
 todos los bloques (90 de 95) siguen conteniendo algún positivo, así que no
 se pierde cobertura por refinar la cuadrícula. Atitlán se dejó en 1 km,
@@ -53,8 +55,8 @@ ya eligió el ejercicio de construcción de modelos.
 | Modelo | F2 (70/30 aleatorio) | F2 (espacial, promedio de 5 pliegues) | Diferencia |
 | --- | --- | --- | --- |
 | Regresión Logística | 0.692 | 0.692 | ≈ 0 |
-| Random Forest | 0.942 | 0.910 | −0.032 |
-| Gradient Boosting | 0.959 | 0.925 | −0.034 |
+| Random Forest | 0.941 | 0.910 | −0.031 |
+| Gradient Boosting | 0.958 | 0.925 | −0.033 |
 
 El desempeño baja en los dos modelos de árboles, y se mantiene igual en la
 Regresión Logística. La caída es moderada pero real: entre 3 y 4 puntos de
@@ -85,11 +87,11 @@ agrupando por fecha en vez de por observación individual:
 | Modelo | F2 (70/30 aleatorio) | F2 (encadenado) | F2 (deja una fecha fuera) |
 | --- | --- | --- | --- |
 | Regresión Logística | 0.692 | 0.387 | 0.257 |
-| Random Forest | 0.942 | 0.247 | 0.264 |
-| Gradient Boosting | 0.959 | 0.321 | 0.364 |
+| Random Forest | 0.941 | 0.247 | 0.264 |
+| Gradient Boosting | 0.958 | 0.321 | 0.364 |
 
 La caída aquí es mucho más severa que en la validación espacial: el F2 del
-Gradient Boosting pasa de 0.959 a un rango de 0.32 a 0.36 según la
+Gradient Boosting pasa de 0.958 a un rango de 0.32 a 0.36 según la
 estrategia, y el Random Forest, el segundo mejor modelo bajo el esquema
 aleatorio, es el que más sufre bajo encadenamiento. La razón está en cómo
 se distribuyen los positivos en el tiempo: el 56.3 por ciento de los casos

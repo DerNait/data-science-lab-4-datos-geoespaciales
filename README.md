@@ -75,8 +75,8 @@ de alineación, máscara y control de calidad.
 
 ## Estado del ejercicio 8.1 y 8.2
 
-- El umbral de "valor alto" de cianobacteria (10 µg/L, "Alert Level 1" de
-  la OMS) está fijado en `src/config.py`
+- El umbral de "valor alto" de cianobacteria (10 µg/L, extremo superior del
+  nivel de vigilancia de la OMS, antes de Alert Level 1) está fijado en `src/config.py`
   (`UMBRAL_CIANOBACTERIA_ALTO_UGL`), documentado en `codebook.md`.
 - `notebooks/08_1_extension_floracion.ipynb` calcula, para las 22 escenas,
   qué porcentaje del área válida del lago supera ese umbral y lo grafica

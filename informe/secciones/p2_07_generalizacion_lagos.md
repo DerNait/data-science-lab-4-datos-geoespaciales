@@ -75,7 +75,7 @@ entrenamiento y en prueba:
 | --- | --- | --- |
 | Regresión Logística | 0.593 | 0.000 |
 | Random Forest | 0.926 | 0.000 / 0.001 |
-| Gradient Boosting | 0.944 | 0.000 / 0.003 |
+| Gradient Boosting | 0.947 | 0.000 / 0.003 |
 
 Cuando el modelo ve observaciones de los dos lagos durante el
 entrenamiento, aunque sea sin saber explícitamente a cuál pertenece cada

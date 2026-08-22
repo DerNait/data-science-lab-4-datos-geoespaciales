@@ -70,5 +70,5 @@ Lo que se evaluó y lo que se eligió quedó registrado en la tabla
 | Gradient Boosting | número de árboles, profundidad, tasa de aprendizaje, submuestreo de filas y de columnas | 200 árboles, profundidad 9, tasa 0.1, submuestreo 0.8 y 0.8 |
 
 Los F2 de validación cruzada que justificaron cada elección fueron 0.696 para la
-Regresión Logística, 0.941 para el Random Forest y 0.955 para el Gradient
+Regresión Logística, 0.942 para el Random Forest y 0.955 para el Gradient
 Boosting.

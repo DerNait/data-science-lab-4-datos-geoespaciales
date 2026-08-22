@@ -15,8 +15,8 @@ excelente aunque el modelo funcione mal sobre la clase que importa.
 | Modelo | Exactitud | Precisión | Recall | F1 | F2 | ROC-AUC | PR-AUC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Regresión Logística | 0.972 | 0.316 | 0.984 | 0.479 | 0.692 | 0.997 | 0.824 |
-| Random Forest | 0.997 | 0.839 | 0.971 | 0.900 | 0.942 | 1.000 | 0.979 |
-| Gradient Boosting | 0.998 | 0.898 | 0.976 | 0.936 | 0.959 | 1.000 | 0.988 |
+| Random Forest | 0.997 | 0.838 | 0.971 | 0.900 | 0.941 | 1.000 | 0.979 |
+| Gradient Boosting | 0.998 | 0.891 | 0.976 | 0.932 | 0.958 | 1.000 | 0.988 |
 
 Lo primero que salta a la vista es que la exactitud no sirve para comparar: los
 tres modelos superan el 97 por ciento simplemente porque el 98.7 por ciento de
@@ -24,7 +24,7 @@ las celdas es negativo. Un modelo que predijera siempre ausencia obtendría 98.7
 por ciento y sería completamente inútil.
 
 La Regresión Logística consigue el recall más alto de los tres, 0.984, pero a un
-costo enorme en precisión: marca 4,058 celdas como alta presencia cuando no lo
+costo enorme en precisión: marca 4,067 celdas como alta presencia cuando no lo
 son. Los dos modelos de árboles conservan casi el mismo recall con muchísima más
 precisión. El **Gradient Boosting es el mejor modelo**: gana en casi todos los
 criterios, y en particular en F2, que es la métrica de comparación elegida.
@@ -62,11 +62,11 @@ Traducido a consecuencias concretas sobre el conjunto de prueba:
 | --- | --- | --- | --- |
 | Regresión Logística | 31 | 1.62 % | 2.16 |
 | Random Forest | 55 | 2.88 % | 0.19 |
-| Gradient Boosting | 46 | 2.41 % | 0.11 |
+| Gradient Boosting | 46 | 2.41 % | 0.12 |
 
 La Regresión Logística deja escapar menos zonas, 31 frente a 46, pero cuesta 2.16
-inspecciones innecesarias por cada zona correctamente detectada, contra 0.11 del
-Gradient Boosting: casi veinte veces más trabajo de campo desperdiciado. Para una
+inspecciones innecesarias por cada zona correctamente detectada, contra 0.12 del
+Gradient Boosting: unas dieciocho veces más trabajo de campo desperdiciado. Para una
 herramienta de apoyo al monitoreo, esa diferencia decide: el Gradient Boosting
 ofrece prácticamente el mismo nivel de protección a un costo operativo mucho
 menor.
@@ -86,8 +86,8 @@ separa.
 Se reentrenó cada modelo sin esas cuatro columnas, conservando sus
 hiperparámetros. Los resultados están en
 `results/tables/diagnostico_identidad_lago.csv`. Los dos modelos de árboles
-conservan casi todo su desempeño: el F2 del Gradient Boosting baja de 0.959 a
-0.944. La Regresión Logística es la que más dependía de la ubicación, y su PR-AUC
+conservan casi todo su desempeño: el F2 del Gradient Boosting baja de 0.958 a
+0.947. La Regresión Logística es la que más dependía de la ubicación, y su PR-AUC
 cae de 0.824 a 0.546.
 
 La conclusión es que la capacidad predictiva de los modelos de árboles viene de
