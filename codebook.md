@@ -726,3 +726,35 @@ de ese NDCI; `B05` no se descargó, así que la fuga entra por `B04`.
 `B03` y `B08` sí pueden usarse como predictoras: en el script de
 cianobacteria solo intervienen en la máscara de agua, no en el valor
 numérico de `chl`.
+
+## Ejercicio 8 - interpretabilidad
+
+`results/tables/importancia_variables.csv` contiene una fila por predictor del
+mejor modelo. `importancia_modelo` e `importancia_modelo_normalizada` son la
+importancia nativa de XGBoost; `shap_media_absoluta` y su versión normalizada
+resumen la magnitud media del efecto SHAP. `correlacion_valor_shap` es Spearman
+entre el valor de la variable y su contribución SHAP, y `direccion_efecto`
+traduce el signo cuando la relación es suficientemente monotónica. Los valores
+se calculan sobre 5,000 filas seleccionadas con
+`correlaciones.deterministic_sample`.
+
+Las figuras versionadas son `results/figures/importancia_variables.png` y
+`results/figures/shap_summary.png`.
+
+## Ejercicio 9 - probabilidades y errores espaciales
+
+`data/processed/ml/predicciones_observaciones.parquet` es regenerable y no se
+versiona. Conserva una fila por observación de la matriz final con lago, fecha,
+centroide UTM, partición, respuesta, probabilidad, clase predicha y categoría de
+error. El umbral de decisión es 0.50.
+
+Los mapas agrupan la probabilidad en cuatro intervalos: muy baja `[0, 0.25)`,
+baja `[0.25, 0.50)`, alta `[0.50, 0.75)` y muy alta `[0.75, 1]`. Si dos teselas
+se superponen en el mismo centroide, su probabilidad se promedia para dibujar
+una única celda de 50 m.
+
+`results/tables/errores_espaciales.csv` usa solo la partición de prueba y agrupa
+por lago, fecha y zona (`orilla_0_250m`, `intermedia_250_1000m` e
+`interior_mas_1000m`). Reporta observaciones, positivos reales, probabilidad
+media, los cuatro elementos de la matriz de confusión y tasas de error. Una tasa
+sin denominador válido se escribe como `indefinido`, nunca como cero.

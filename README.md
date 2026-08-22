@@ -120,6 +120,22 @@ de alineación, máscara y control de calidad.
   cada lago) sin presentarlo como causa demostrada por los datos del
   laboratorio.
 
+## Estado de la Parte 2
+
+- La tabla base reúne 492,677 celdas de 50 m; la matriz final conserva
+  492,663 filas y 17 predictores después de excluir 14 cocientes B03/B08
+  indefinidos.
+- Se entrenaron y evaluaron Regresión Logística, Random Forest y Gradient
+  Boosting sobre una partición estratificada común. Gradient Boosting fue el
+  mejor según F2 (0.958).
+- La validación espacial por bloques, la validación temporal y los experimentos
+  entre lagos están documentados en los notebooks 14 y 15 y en
+  `results/tables/`.
+- `src/interpretabilidad.py` produce importancia global y SHAP sobre una muestra
+  determinística de 5,000 filas.
+- `src/mapas_predictivos.py` calcula una probabilidad para cada observación,
+  reconstruye la rejilla de 50 m y genera un mapa comparativo por lago junto con
+  el diagnóstico espacial de errores.
 ## Estructura
 
 ```text
@@ -145,7 +161,10 @@ de alineación, máscara y control de calidad.
 │   ├── 08_2_zonas_persistentes.ipynb
 │   ├── 08_3_distribuciones.ipynb
 │   ├── 08_4_patron_estacional.ipynb
-│   └── 08_5_interpretacion_global.ipynb
+│   ├── 08_5_interpretacion_global.ipynb
+│   ├── 09_dataset_ml.ipynb ... 15_generalizacion_lagos.ipynb
+│   ├── 16_interpretabilidad.ipynb
+│   └── 17_mapas_predictivos.ipynb
 ├── results/
 │   ├── maps/                        # mapas espaciales, persistencia y diferencias temporales
 │   ├── figures/                     # series, correlaciones y distribuciones
@@ -158,6 +177,10 @@ de alineación, máscara y control de calidad.
 │   ├── analisis_espacial.py         # contorno real, mapas, extensión de floración y persistencia
 │   ├── correlaciones.py             # correlaciones, distribuciones y mapas de diferencia
 │   ├── comparacion_lagos.py         # tabla comparativa Atitlán vs. Amatitlán y patrón estacional
+│   ├── dataset_ml.py, respuesta.py y features.py
+│   ├── modelos.py, evaluacion.py y validacion.py
+│   ├── interpretabilidad.py          # importancia global y SHAP reproducible
+│   ├── mapas_predictivos.py          # probabilidades, mapas y errores espaciales
 │   ├── evalscripts/                 # script de cianobacteria (original y adaptación numérica)
 │   ├── raster_utils.py              # validación local de GeoTIFF
 │   └── run_pipeline.py              # preparación segura de esta etapa
